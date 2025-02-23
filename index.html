@@ -15,7 +15,7 @@
             margin: 20px;
             letter-spacing: 5px;
         }
-        #controls {
+        #controls, #game {
             margin: 20px;
         }
         textarea {
@@ -26,6 +26,16 @@
         button {
             padding: 10px 20px;
             margin: 5px;
+        }
+        #hangman {
+            font-family: monospace;
+            font-size: 16px;
+            white-space: pre;
+            margin: 20px;
+        }
+        #guess-input {
+            width: 50px;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -39,12 +49,79 @@
         <button onclick="speakWord()">Read Word</button>
     </div>
 
-    <div id="word-display"></div>
-    <div id="char-count"></div>
+    <div id="game">
+        <div id="word-display"></div>
+        <div id="char-count"></div>
+        <div id="hangman"></div>
+        <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
+        <button onclick="makeGuess()">Guess</button>
+        <div id="message"></div>
+    </div>
 
     <script>
         let selectedWord = '';
         let hiddenWord = '';
+        let guessesLeft = 6;
+        let guessedLetters = new Set();
+
+        const hangmanStages = [
+            `
+  +---+
+  |   |
+      |
+      |
+      |
+      |
+=========`,
+            `
+  +---+
+  |   |
+  O   |
+      |
+      |
+      |
+=========`,
+            `
+  +---+
+  |   |
+  O   |
+  |   |
+      |
+      |
+=========`,
+            `
+  +---+
+  |   |
+  O   |
+ /|   |
+      |
+      |
+=========`,
+            `
+  +---+
+  |   |
+  O   |
+ /|\\  |
+      |
+      |
+=========`,
+            `
+  +---+
+  |   |
+  O   |
+ /|\\  |
+ /    |
+      |
+=========`,
+            `
+  +---+
+  |   |
+  O   |
+ /|\\  |
+ / \\  |
+      |
+=========`
+        ];
 
         function startGame() {
             const input = document.getElementById('word-input').value.trim();
@@ -53,23 +130,66 @@
                 return;
             }
 
-            // Split input by commas or spaces, filter out empty entries
             const words = input.split(/[\s,]+/).filter(word => word.length > 0);
             if (words.length === 0) {
                 alert('Please enter valid words!');
                 return;
             }
 
-            // Randomly select a word
+            // Clear the textarea after grabbing the words
+            document.getElementById('word-input').value = '';
+
             selectedWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
-            
-            // Create hidden word display with dashes
             hiddenWord = '-'.repeat(selectedWord.length);
+            guessesLeft = 6;
+            guessedLetters.clear();
+
             document.getElementById('word-display').textContent = hiddenWord;
-            
-            // Show character count
-            document.getElementById('char-count').textContent = 
-                `Total characters: ${selectedWord.length}`;
+            document.getElementById('char-count').textContent = `Total characters: ${selectedWord.length}`;
+            document.getElementById('hangman').textContent = hangmanStages[0];
+            document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
+            document.getElementById('guess-input').value = '';
+            document.getElementById('guess-input').disabled = false; // Re-enable in case it was disabled
+            document.getElementById('guess-input').focus();
+        }
+
+        function makeGuess() {
+            const guess = document.getElementById('guess-input').value.toLowerCase();
+            if (!guess || guess.length !== 1 || !/[a-z]/.test(guess)) {
+                alert('Please enter a single letter!');
+                return;
+            }
+
+            if (guessedLetters.has(guess)) {
+                alert('You already guessed that letter!');
+                return;
+            }
+
+            guessedLetters.add(guess);
+            document.getElementById('guess-input').value = '';
+
+            if (selectedWord.includes(guess)) {
+                let newHiddenWord = '';
+                for (let i = 0; i < selectedWord.length; i++) {
+                    newHiddenWord += (selectedWord[i] === guess) ? guess : hiddenWord[i];
+                }
+                hiddenWord = newHiddenWord;
+                document.getElementById('word-display').textContent = hiddenWord;
+
+                if (!hiddenWord.includes('-')) {
+                    document.getElementById('message').textContent = 'You win!';
+                    document.getElementById('guess-input').disabled = true;
+                }
+            } else {
+                guessesLeft--;
+                document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
+                document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
+
+                if (guessesLeft === 0) {
+                    document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}`;
+                    document.getElementById('guess-input').disabled = true;
+                }
+            }
         }
 
         function speakWord() {
@@ -77,12 +197,15 @@
                 alert('Start a game first!');
                 return;
             }
-
-            // Use SpeechSynthesis API to read the word
             const speech = new SpeechSynthesisUtterance(selectedWord);
-            speech.lang = 'en-US'; // Set language to English
+            speech.lang = 'en-US';
             window.speechSynthesis.speak(speech);
         }
+
+        // Allow Enter key to trigger guess
+        document.getElementById('guess-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') makeGuess();
+        });
     </script>
 </body>
 </html>
