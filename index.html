@@ -285,17 +285,22 @@
             }, []);
 
             const loadVoices = () => {
-                const availableVoices = window.speechSynthesis.getVoices();
-                if (availableVoices.length === 0) {
-                    window.speechSynthesis.onvoiceschanged = () => {
-                        const voicesList = window.speechSynthesis.getVoices();
-                        setVoices(voicesList);
-                        if (voicesList.length > 0) setSelectedVoice(voicesList[0]);
-                    };
-                } else {
-                    setVoices(availableVoices);
-                    setSelectedVoice(availableVoices[0]);
-                }
+                const updateVoices = () => {
+                    const availableVoices = window.speechSynthesis.getVoices();
+                    if (availableVoices.length > 0) {
+                        setVoices(availableVoices);
+                        const englishVoice = availableVoices.find(v => v.lang.startsWith('en-')) || availableVoices[0];
+                        setSelectedVoice(englishVoice);
+                    }
+                };
+
+                updateVoices();
+                window.speechSynthesis.onvoiceschanged = () => {
+                    updateVoices();
+                    if (window.speechSynthesis.getVoices().length > 0) {
+                        window.speechSynthesis.onvoiceschanged = null;
+                    }
+                };
             };
 
             const submitWords = (input) => {
@@ -336,7 +341,7 @@
             return (
                 <div>
                     <h1>Hangman Game</h1>
-                    <p id="version">Version 1.20</p>
+                    <p id="version">Version 1.22</p>
                     <div id="main-container" className={gameState === 'finished' ? 'finish-screen' : ''}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
@@ -460,13 +465,18 @@
                 { name: 'Microsoft David Desktop', lang: 'en-US' },
             ];
 
-            const availableVoices = voices.filter(voice =>
+            const englishVoices = voices.filter(voice => voice.lang.startsWith('en-'));
+            const preferredAvailable = englishVoices.filter(voice =>
                 preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
             ).sort((a, b) => {
                 const aIndex = preferredVoices.findIndex(p => p.name === a.name && p.lang === a.lang);
                 const bIndex = preferredVoices.findIndex(p => p.name === b.name && p.lang === b.lang);
                 return aIndex - bIndex;
             });
+            const otherEnglish = englishVoices.filter(voice =>
+                !preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
+            ).sort((a, b) => a.name.localeCompare(b.name));
+            const allEnglishVoices = [...preferredAvailable, ...otherEnglish];
 
             return (
                 <div className="container">
@@ -479,14 +489,21 @@
                     <div className="mode-options">
                         <select
                             value={selectedVoice?.name || ''}
-                            onChange={(e) => setSelectedVoice(availableVoices.find(v => v.name === e.target.value))}
+                            onChange={(e) => {
+                                const voice = allEnglishVoices.find(v => v.name === e.target.value);
+                                setSelectedVoice(voice || null);
+                            }}
                         >
                             <option value="">Select a voice</option>
-                            {availableVoices.map((voice) => (
-                                <option key={voice.name} value={voice.name}>
-                                    {`${voice.name} (${voice.lang})`}
-                                </option>
-                            ))}
+                            {allEnglishVoices.length > 0 ? (
+                                allEnglishVoices.map((voice) => (
+                                    <option key={voice.name} value={voice.name}>
+                                        {`${voice.name} (${voice.lang})`}
+                                    </option>
+                                ))
+                            ) : (
+                                <option value="">No English voices available</option>
+                            )}
                         </select>
                     </div>
                 </div>
@@ -570,9 +587,9 @@
             const getMasterMindClue = (guess) => {
                 const target = selectedWord.split('');
                 const guessed = guess.split('');
-                const clue = new Array(target.length).fill(''); // Initialize clue array to target length
-                const targetUsed = new Array(target.length).fill(false); // Track used target positions
-                const guessUsed = new Array(guessed.length).fill(false); // Track used guess positions
+                const clue = new Array(target.length).fill('');
+                const targetUsed = new Array(target.length).fill(false);
+                const guessUsed = new Array(guessed.length).fill(false);
 
                 // Step 1: Assign black pegs (correct letter, correct position)
                 for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
@@ -585,13 +602,13 @@
 
                 // Step 2: Assign white pegs (correct letter, wrong position)
                 for (let i = 0; i < guessed.length; i++) {
-                    if (!guessUsed[i]) { // Skip if already used for a black peg
+                    if (!guessUsed[i]) {
                         for (let j = 0; j < target.length; j++) {
                             if (!targetUsed[j] && guessed[i] === target[j]) {
-                                clue[i] = 'white'; // Assign white peg at guess position
+                                clue[i] = 'white';
                                 targetUsed[j] = true;
                                 guessUsed[i] = true;
-                                break; // Move to next guess letter
+                                break;
                             }
                         }
                     }
