@@ -208,7 +208,7 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.13</p>
+    <p id="version">Version 1.14</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -227,13 +227,8 @@
             <button onclick="startGame('mastermind')">MasterMind Mode</button>
         </div>
         <div id="mode-options">
-            <select id="accent-select">
-                <option value="en-US">American</option>
-                <option value="en-GB">British</option>
-            </select>
             <select id="voice-select">
-                <option value="female">Female</option>
-                <option value="male">Male</option>
+                <option value="">Select a voice</option>
             </select>
         </div>
     </div>
@@ -290,8 +285,7 @@
         let score = 0;
         let lastUsedWords = '';
         let guessAttempts = [];
-        let accent = 'en-US';
-        let voiceGender = 'female';
+        let selectedVoice = null;
         let voices = [];
 
         const canvas = document.getElementById('hangman-canvas');
@@ -369,12 +363,13 @@
 
             document.getElementById('controls').classList.remove('active');
             document.getElementById('mode-selection').classList.add('active');
+            populateVoiceSelect();
         }
 
         function startGame(mode) {
             gameMode = mode;
-            accent = document.getElementById('accent-select').value;
-            voiceGender = document.getElementById('voice-select').value;
+            const voiceSelect = document.getElementById('voice-select');
+            selectedVoice = voices.find(v => v.name === voiceSelect.value) || voices[0];
             document.getElementById('mode-selection').classList.remove('active');
             document.getElementById('game').classList.add('active');
             document.getElementById('scoreboard').classList.add('active');
@@ -596,68 +591,55 @@
 
         function speakWordWithVoice(word) {
             const speech = new SpeechSynthesisUtterance(word);
-            speech.lang = accent;
-
-            // High-quality voice selection optimized for Safari
-            const availableVoices = window.speechSynthesis.getVoices();
-            let selectedVoice = null;
-
-            // Preferred voices for Chrome and Safari
-            const preferredVoices = {
-                'en-US': {
-                    female: ['Samantha', 'Google US English', 'Microsoft Zira Desktop'], // Samantha for Safari
-                    male: ['Alex', 'Google US English Male', 'Microsoft David Desktop']   // Alex for Safari
-                },
-                'en-GB': {
-                    female: ['Kate', 'Google UK English Female', 'Microsoft Hazel Desktop'], // Kate for Safari
-                    male: ['Daniel', 'Google UK English Male', 'Microsoft George Desktop']   // Daniel for Safari
-                }
-            };
-
-            // Detect Safari
+            if (selectedVoice) {
+                speech.voice = selectedVoice;
+                speech.lang = selectedVoice.lang;
+            }
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-            // Choose voices with Safari preference
-            const accentVoices = preferredVoices[accent][voiceGender];
-            for (const voiceName of accentVoices) {
-                selectedVoice = availableVoices.find(v => v.name === voiceName && v.lang === accent);
-                if (selectedVoice) break;
-            }
-
-            // Safari-specific fallback: Prioritize system voices if no match
-            if (!selectedVoice && isSafari) {
-                selectedVoice = availableVoices.find(v => 
-                    v.lang === accent && 
-                    (v.name === (voiceGender === 'female' ? 'Samantha' : 'Alex') || 
-                     v.name === (voiceGender === 'female' ? 'Kate' : 'Daniel'))
-                );
-            }
-
-            // General fallback: First matching accent and approximate gender
-            if (!selectedVoice) {
-                selectedVoice = availableVoices.find(v => 
-                    v.lang === accent && 
-                    (v.name.toLowerCase().includes(voiceGender) || 
-                     (voiceGender === 'male' && !v.name.toLowerCase().includes('female')))
-                ) || availableVoices.find(v => v.lang === accent);
-            }
-
-            speech.voice = selectedVoice || availableVoices[0]; // Final fallback
-            speech.rate = 1.0; // Normalize speed for consistency
-            speech.pitch = 1.0; // Normalize pitch
+            speech.rate = isSafari ? 0.9 : 1.0;
+            speech.pitch = isSafari && selectedVoice?.lang === 'en-GB' ? 1.1 : 1.0;
             window.speechSynthesis.speak(speech);
         }
 
-        // Load voices on page load or when they change
+        function populateVoiceSelect() {
+            const voiceSelect = document.getElementById('voice-select');
+            voiceSelect.innerHTML = '<option value="">Select a voice</option>';
+            
+            // Filter for high-quality voices (non-remote, premium voices where available)
+            const highQualityVoices = voices.filter(voice => 
+                !voice.name.toLowerCase().includes('remote') && 
+                (voice.name.toLowerCase().includes('premium') || 
+                 !voice.name.toLowerCase().includes('basic'))
+            );
+
+            // Fall back to all voices if no high-quality ones are found
+            const displayVoices = highQualityVoices.length > 0 ? highQualityVoices : voices;
+
+            displayVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+
+            // Select first available voice by default
+            if (displayVoices.length > 0) {
+                voiceSelect.value = displayVoices[0].name;
+            }
+        }
+
         function loadVoices() {
             voices = window.speechSynthesis.getVoices();
             if (voices.length === 0) {
                 window.speechSynthesis.onvoiceschanged = () => {
                     voices = window.speechSynthesis.getVoices();
                     if (voices.length > 0) {
-                        window.speechSynthesis.onvoiceschanged = null; // Remove listener after loading
+                        populateVoiceSelect();
+                        window.speechSynthesis.onvoiceschanged = null;
                     }
                 };
+            } else {
+                populateVoiceSelect();
             }
         }
 
@@ -665,7 +647,6 @@
             if (e.key === 'Enter') makeGuess();
         });
 
-        // Initial setup
         loadWordLists();
         loadVoices();
         drawHangman();
