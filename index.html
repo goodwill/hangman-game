@@ -6,92 +6,145 @@
     <title>Hangman Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             text-align: center;
-            margin: 20px;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+            min-height: 100vh;
         }
-        #word-display {
-            font-size: 24px;
-            margin: 20px;
-            letter-spacing: 5px;
+        h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+        #version {
+            font-size: 1em;
+            color: #7f8c8d;
+            margin-bottom: 20px;
         }
         #controls, #game, #scoreboard, #mode-selection, #final-score {
-            margin: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             display: none;
         }
         #controls.active, #game.active, #scoreboard.active, #mode-selection.active, #final-score.active {
             display: block;
         }
         textarea {
-            width: 300px;
+            width: 100%;
             height: 100px;
-            margin: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            resize: none;
+            font-size: 1em;
         }
         button {
             padding: 10px 20px;
             margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #3498db;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
         }
-        #hangman {
-            font-family: monospace;
-            font-size: 16px;
-            white-space: pre;
-            margin: 20px;
+        button:hover {
+            background: #2980b9;
+        }
+        #word-display {
+            font-size: 2em;
+            margin: 20px 0;
+            letter-spacing: 5px;
+            color: #2c3e50;
         }
         #guess-input {
             width: 50px;
-            font-size: 16px;
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            margin-right: 10px;
         }
         #guess-input.whole-word {
             width: 150px;
         }
-        #version {
-            font-size: 14px;
-            color: #666;
+        #hangman-canvas {
+            margin: 20px auto;
+            display: block;
+        }
+        #message {
+            font-size: 1.1em;
+            color: #e74c3c;
+            margin-top: 10px;
         }
         #scoreboard {
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            justify-content: space-around;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         .list-container {
-            width: 200px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .list-container h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
         }
         ul {
             list-style-type: none;
             padding: 0;
         }
+        li {
+            background: #ecf0f1;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        #final-score h3 {
+            color: #2c3e50;
+        }
+        #final-score-display {
+            font-size: 1.5em;
+            color: #27ae60;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.5</p>
+    <p id="version">Version 1.6</p>
 
-    <!-- Step 1: Ask for Words -->
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
         <br>
         <button onclick="submitWords()">Submit Words</button>
     </div>
 
-    <!-- Step 2: Choose Game Mode -->
     <div id="mode-selection">
         <h3>Choose Game Mode</h3>
         <button onclick="startGame('char')">One Character Mode</button>
         <button onclick="startGame('word')">Whole Word Mode</button>
     </div>
 
-    <!-- Step 3: Game Play -->
     <div id="game">
         <div id="word-display"></div>
         <div id="char-count"></div>
-        <div id="hangman"></div>
+        <canvas id="hangman-canvas" width="200" height="200"></canvas>
         <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
         <button onclick="makeGuess()">Guess</button>
         <button onclick="speakWord()">Read Word</button>
         <div id="message"></div>
     </div>
 
-    <!-- Scoreboard (Visible During Game) -->
     <div id="scoreboard">
         <div class="list-container">
             <h3>Correctly Guessed</h3>
@@ -108,7 +161,6 @@
         </div>
     </div>
 
-    <!-- Step 4: Final Score -->
     <div id="final-score">
         <h3>Game Over - Final Score</h3>
         <p id="final-score-display">0 / 0</p>
@@ -129,64 +181,54 @@
         let score = 0;
         let lastUsedWords = '';
 
-        const hangmanStages = [
-            `
-  +---+
-  |   |
-      |
-      |
-      |
-      |
-=========`,
-            `
-  +---+
-  |   |
-  O   |
-      |
-      |
-      |
-=========`,
-            `
-  +---+
-  |   |
-  O   |
-  |   |
-      |
-      |
-=========`,
-            `
-  +---+
-  |   |
-  O   |
- /|   |
-      |
-      |
-=========`,
-            `
-  +---+
-  |   |
-  O   |
- /|\\  |
-      |
-      |
-=========`,
-            `
-  +---+
-  |   |
-  O   |
- /|\\  |
- /    |
-      |
-=========`,
-            `
-  +---+
-  |   |
-  O   |
- /|\\  |
- / \\  |
-      |
-=========`
-        ];
+        const canvas = document.getElementById('hangman-canvas');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+
+        function drawHangman() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 2;
+
+            // Gallows
+            ctx.beginPath();
+            ctx.moveTo(50, 180); ctx.lineTo(150, 180); // Base
+            ctx.moveTo(100, 180); ctx.lineTo(100, 20); // Pole
+            ctx.moveTo(100, 20); ctx.lineTo(140, 20); // Top
+            ctx.moveTo(140, 20); ctx.lineTo(140, 40); // Rope
+            ctx.stroke();
+
+            if (guessesLeft < 6) { // Head
+                ctx.beginPath();
+                ctx.arc(140, 60, 20, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            if (guessesLeft < 5) { // Body
+                ctx.beginPath();
+                ctx.moveTo(140, 80); ctx.lineTo(140, 120);
+                ctx.stroke();
+            }
+            if (guessesLeft < 4) { // Left Arm
+                ctx.beginPath();
+                ctx.moveTo(140, 90); ctx.lineTo(120, 110);
+                ctx.stroke();
+            }
+            if (guessesLeft < 3) { // Right Arm
+                ctx.beginPath();
+                ctx.moveTo(140, 90); ctx.lineTo(160, 110);
+                ctx.stroke();
+            }
+            if (guessesLeft < 2) { // Left Leg
+                ctx.beginPath();
+                ctx.moveTo(140, 120); ctx.lineTo(120, 150);
+                ctx.stroke();
+            }
+            if (guessesLeft < 1) { // Right Leg
+                ctx.beginPath();
+                ctx.moveTo(140, 120); ctx.lineTo(160, 150);
+                ctx.stroke();
+            }
+        }
 
         function submitWords() {
             const input = document.getElementById('word-input').value.trim();
@@ -201,7 +243,7 @@
                 return;
             }
 
-            lastUsedWords = input; // Store last used words
+            lastUsedWords = input;
             remainingWords = [...wordsList];
             totalPoints = wordsList.length;
             score = 0;
@@ -235,7 +277,7 @@
 
             document.getElementById('word-display').textContent = hiddenWord;
             document.getElementById('char-count').textContent = `Total characters: ${selectedWord.length}`;
-            document.getElementById('hangman').textContent = hangmanStages[0];
+            drawHangman();
             document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
 
             const guessInput = document.getElementById('guess-input');
@@ -289,11 +331,11 @@
                         updateLists();
                         updateScore();
                         document.getElementById('message').textContent = 'You win! Next word...';
-                        setTimeout(startNextWord, 1000); // Brief delay before next word
+                        setTimeout(startNextWord, 1000);
                     }
                 } else {
                     guessesLeft--;
-                    document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
+                    drawHangman();
                     document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
 
                     if (guessesLeft === 0) {
@@ -323,7 +365,7 @@
                     setTimeout(startNextWord, 1000);
                 } else {
                     guessesLeft--;
-                    document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
+                    drawHangman();
                     document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
 
                     if (guessesLeft === 0) {
@@ -335,6 +377,7 @@
                     }
                 }
             }
+            guessInput.focus(); // Refocus after guess
         }
 
         function updateLists() {
@@ -359,7 +402,7 @@
         function restartGame() {
             document.getElementById('final-score').classList.remove('active');
             document.getElementById('controls').classList.add('active');
-            document.getElementById('word-input').value = lastUsedWords; // Reload last used words
+            document.getElementById('word-input').value = lastUsedWords;
             wordsList = [];
             remainingWords = [];
             correctWords = [];
@@ -383,6 +426,9 @@
         document.getElementById('guess-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') makeGuess();
         });
+
+        // Initial draw
+        drawHangman();
     </script>
 </body>
 </html>
