@@ -208,7 +208,7 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.11</p>
+    <p id="version">Version 1.12</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -290,8 +290,9 @@
         let score = 0;
         let lastUsedWords = '';
         let guessAttempts = [];
-        let accent = 'en-US'; // Default: American
-        let voiceGender = 'female'; // Default: Female
+        let accent = 'en-US';
+        let voiceGender = 'female';
+        let voices = [];
 
         const canvas = document.getElementById('hangman-canvas');
         const ctx = canvas ? canvas.getContext('2d') : null;
@@ -309,43 +310,19 @@
             ctx.moveTo(140, 20); ctx.lineTo(140, 40); // Rope
             ctx.stroke();
 
-            if (guessesLeft < 6) { // Head
-                ctx.beginPath();
-                ctx.arc(140, 60, 20, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            if (guessesLeft < 5) { // Body
-                ctx.beginPath();
-                ctx.moveTo(140, 80); ctx.lineTo(140, 120);
-                ctx.stroke();
-            }
-            if (guessesLeft < 4) { // Left Arm
-                ctx.beginPath();
-                ctx.moveTo(140, 90); ctx.lineTo(120, 110);
-                ctx.stroke();
-            }
-            if (guessesLeft < 3) { // Right Arm
-                ctx.beginPath();
-                ctx.moveTo(140, 90); ctx.lineTo(160, 110);
-                ctx.stroke();
-            }
-            if (guessesLeft < 2) { // Left Leg
-                ctx.beginPath();
-                ctx.moveTo(140, 120); ctx.lineTo(120, 150);
-                ctx.stroke();
-            }
-            if (guessesLeft < 1) { // Right Leg
-                ctx.beginPath();
-                ctx.moveTo(140, 120); ctx.lineTo(160, 150);
-                ctx.stroke();
-            }
+            if (guessesLeft < 6) { ctx.beginPath(); ctx.arc(140, 60, 20, 0, Math.PI * 2); ctx.stroke(); }
+            if (guessesLeft < 5) { ctx.beginPath(); ctx.moveTo(140, 80); ctx.lineTo(140, 120); ctx.stroke(); }
+            if (guessesLeft < 4) { ctx.beginPath(); ctx.moveTo(140, 90); ctx.lineTo(120, 110); ctx.stroke(); }
+            if (guessesLeft < 3) { ctx.beginPath(); ctx.moveTo(140, 90); ctx.lineTo(160, 110); ctx.stroke(); }
+            if (guessesLeft < 2) { ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(120, 150); ctx.stroke(); }
+            if (guessesLeft < 1) { ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(160, 150); ctx.stroke(); }
         }
 
         function loadWordLists() {
             const wordLists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
             const select = document.getElementById('word-list-select');
             select.innerHTML = '<option value="">Select a previous word list</option>';
-            wordLists.forEach((list, index) => {
+            wordLists.forEach((list) => {
                 const option = document.createElement('option');
                 option.value = list;
                 option.textContent = list.substring(0, 50) + (list.length > 50 ? '...' : '');
@@ -362,9 +339,7 @@
             let wordLists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
             if (!wordLists.includes(input)) {
                 wordLists.unshift(input);
-                if (wordLists.length > 50) {
-                    wordLists.pop();
-                }
+                if (wordLists.length > 50) wordLists.pop();
                 localStorage.setItem('hangmanWordLists', JSON.stringify(wordLists));
             }
             loadWordLists();
@@ -620,28 +595,63 @@
         }
 
         function speakWordWithVoice(word) {
-            const voices = window.speechSynthesis.getVoices();
             const speech = new SpeechSynthesisUtterance(word);
             speech.lang = accent;
-            const genderVoices = voices.filter(v => v.lang === accent);
-            const selectedVoice = genderVoices.find(v => 
-                (voiceGender === 'female' && v.name.toLowerCase().includes('female')) ||
-                (voiceGender === 'male' && !v.name.toLowerCase().includes('female'))
-            ) || genderVoices[0]; // Fallback to first available if no gender match
-            speech.voice = selectedVoice;
+
+            // High-quality voice selection
+            const availableVoices = window.speechSynthesis.getVoices();
+            let selectedVoice = null;
+
+            // Preferred high-quality voices
+            const preferredVoices = {
+                'en-US': {
+                    female: ['Google US English', 'Microsoft Zira Desktop', 'Samantha'],
+                    male: ['Google US English Male', 'Microsoft David Desktop', 'Alex']
+                },
+                'en-GB': {
+                    female: ['Google UK English Female', 'Microsoft Hazel Desktop', 'Susan'],
+                    male: ['Google UK English Male', 'Microsoft George Desktop', 'Daniel']
+                }
+            };
+
+            // Find a matching high-quality voice
+            const accentVoices = preferredVoices[accent][voiceGender];
+            for (const voiceName of accentVoices) {
+                selectedVoice = availableVoices.find(v => v.name.includes(voiceName));
+                if (selectedVoice) break;
+            }
+
+            // Fallback: First matching accent and approximate gender
+            if (!selectedVoice) {
+                const genderFilter = voiceGender === 'female' ? 'female' : 'male';
+                selectedVoice = availableVoices.find(v => 
+                    v.lang === accent && 
+                    (v.name.toLowerCase().includes(genderFilter) || 
+                     (genderFilter === 'male' && !v.name.toLowerCase().includes('female')))
+                ) || availableVoices.find(v => v.lang === accent); // Ultimate fallback
+            }
+
+            speech.voice = selectedVoice || availableVoices[0]; // Final fallback to first voice
             window.speechSynthesis.speak(speech);
         }
 
-        // Load voices and ensure they're available
-        window.speechSynthesis.onvoiceschanged = () => {
-            // Triggered when voices are loaded
-        };
+        // Load voices on page load or when they change
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    voices = window.speechSynthesis.getVoices();
+                };
+            }
+        }
 
         document.getElementById('guess-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') makeGuess();
         });
 
+        // Initial setup
         loadWordLists();
+        loadVoices();
         drawHangman();
     </script>
 </body>
