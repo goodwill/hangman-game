@@ -93,8 +93,8 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.23</p>
-                    <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'finished' ? 'md:flex-row' : ''}`}>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.24</p>
+                    <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' ? 'md:flex-row md:items-stretch' : gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
                             <ModeSelection
@@ -106,6 +106,14 @@
                         )}
                         {gameState === 'playing' && (
                             <>
+                                <Scoreboard
+                                    correctWords={correctWords}
+                                    failedWords={failedWords}
+                                    score={score}
+                                    totalPoints={totalPoints}
+                                    remainingWords={remainingWords}
+                                    className="md:order-1 md:flex-1 md:max-w-[35vw]"
+                                />
                                 <Game
                                     wordsList={remainingWords}
                                     setRemainingWords={setRemainingWords}
@@ -119,26 +127,21 @@
                                     gameMode={gameMode}
                                     onEnd={endGame}
                                     selectedVoice={selectedVoice}
-                                />
-                                <Scoreboard
-                                    correctWords={correctWords}
-                                    failedWords={failedWords}
-                                    score={score}
-                                    totalPoints={totalPoints}
-                                    remainingWords={remainingWords}
+                                    className="md:order-2 md:flex-2"
                                 />
                             </>
                         )}
                         {gameState === 'finished' && (
                             <>
-                                <FinalScore score={score} totalPoints={totalPoints} onRestart={restartGame} />
                                 <Scoreboard
                                     correctWords={correctWords}
                                     failedWords={failedWords}
                                     score={score}
                                     totalPoints={totalPoints}
                                     remainingWords={remainingWords}
+                                    className="md:order-1 md:flex-1 md:max-w-[35vw]"
                                 />
+                                <FinalScore score={score} totalPoints={totalPoints} onRestart={restartGame} className="md:order-2 md:flex-2" />
                             </>
                         )}
                     </div>
@@ -286,6 +289,7 @@
             gameMode,
             onEnd,
             selectedVoice,
+            className,
         }) => {
             const [selectedWord, setSelectedWord] = useState('');
             const [hiddenWord, setHiddenWord] = useState('');
@@ -309,23 +313,18 @@
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 const dpr = window.devicePixelRatio || 1;
-                const size = 300; // Square logical size
+                const size = 300;
 
-                // Set display size (CSS)
                 canvas.style.width = `${size}px`;
                 canvas.style.height = `${size}px`;
-
-                // Set drawing buffer size (adjusted for DPR)
                 canvas.width = size * dpr;
                 canvas.height = size * dpr;
                 ctx.scale(dpr, dpr);
 
-                // Clear canvas
                 ctx.clearRect(0, 0, size, size);
                 ctx.strokeStyle = '#2c3e50';
                 ctx.lineWidth = 2;
 
-                // Draw hangman parts with corrected proportions
                 ctx.beginPath();
                 ctx.moveTo(size * 0.2, size * 0.9); ctx.lineTo(size * 0.8, size * 0.9); // Base
                 ctx.moveTo(size * 0.5, size * 0.9); ctx.lineTo(size * 0.5, size * 0.1); // Pole
@@ -337,37 +336,37 @@
                     ctx.beginPath(); 
                     ctx.arc(size * 0.7, size * 0.3, size * 0.1, 0, Math.PI * 2); 
                     ctx.stroke(); 
-                } // Head
+                }
                 if (guessesLeft < 5) { 
                     ctx.beginPath(); 
                     ctx.moveTo(size * 0.7, size * 0.4); 
                     ctx.lineTo(size * 0.7, size * 0.6); 
                     ctx.stroke(); 
-                } // Body
+                }
                 if (guessesLeft < 4) { 
                     ctx.beginPath(); 
                     ctx.moveTo(size * 0.7, size * 0.45); 
                     ctx.lineTo(size * 0.6, size * 0.55); 
                     ctx.stroke(); 
-                } // Left Arm
+                }
                 if (guessesLeft < 3) { 
                     ctx.beginPath(); 
                     ctx.moveTo(size * 0.7, size * 0.45); 
                     ctx.lineTo(size * 0.8, size * 0.55); 
                     ctx.stroke(); 
-                } // Right Arm
+                }
                 if (guessesLeft < 2) { 
                     ctx.beginPath(); 
                     ctx.moveTo(size * 0.7, size * 0.6); 
                     ctx.lineTo(size * 0.6, size * 0.75); 
                     ctx.stroke(); 
-                } // Left Leg
+                }
                 if (guessesLeft < 1) { 
                     ctx.beginPath(); 
                     ctx.moveTo(size * 0.7, size * 0.6); 
                     ctx.lineTo(size * 0.8, size * 0.75); 
                     ctx.stroke(); 
-                } // Right Leg
+                }
             };
 
             const startNextWord = () => {
@@ -512,10 +511,10 @@
             };
 
             return (
-                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center md:flex-2 md:order-2">
+                <div className={`m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center ${className}`}>
                     <div id="word-display" className="text-[clamp(1.5rem,4vw,2.5rem)] my-[2vh] tracking-[0.5vw] text-[#2c3e50] break-all">{hiddenWord}</div>
                     <div>Total characters: {selectedWord.length}</div>
-                    <div className="flex flex-col justify-center gap-[2vh] w-full md:flex-row md:flex-wrap md:items-center">
+                    <div className="flex flex-col justify-center gap-[2vh] w-full md:flex-row md:items-center">
                         <canvas 
                             ref={canvasRef} 
                             id="hangman-canvas" 
@@ -539,36 +538,38 @@
                             </ul>
                         </div>
                     </div>
-                    <input
-                        id="guess-input"
-                        type="text"
-                        value={guessInput}
-                        onChange={(e) => setGuessInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && makeGuess()}
-                        className={`p-[1vh] border border-[#bdc3c7] rounded-md m-[1vh_0] text-[clamp(0.9rem,2vw,1.2rem)] ${gameMode !== 'char' ? 'w-[clamp(20vw,30vw,40vw)] md:w-[clamp(15vw,20vw,25vw)]' : 'w-[clamp(10vw,15vw,20vw)] md:w-[clamp(5vw,10vw,15vw)]'}`}
-                        placeholder={gameMode === 'char' ? 'Guess a letter' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
-                        maxLength={gameMode === 'char' ? 1 : undefined}
-                    />
-                    <button onClick={makeGuess} className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] md:max-w-[15vw] text-[clamp(0.9rem,2vw,1.2rem)]">Guess</button>
-                    <button onClick={speakWord} className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] md:max-w-[15vw] text-[clamp(0.9rem,2vw,1.2rem)]">Read Word</button>
+                    <div className="flex flex-col gap-[0.5vh] w-full md:flex-row md:gap-[1vh] md:justify-center">
+                        <input
+                            id="guess-input"
+                            type="text"
+                            value={guessInput}
+                            onChange={(e) => setGuessInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && makeGuess()}
+                            className={`p-[1vh] border border-[#bdc3c7] rounded-md text-[clamp(0.9rem,2vw,1.2rem)] w-full ${gameMode !== 'char' ? 'md:w-[clamp(15vw,20vw,25vw)]' : 'md:w-[clamp(5vw,10vw,15vw)]'}`}
+                            placeholder={gameMode === 'char' ? 'Guess a letter' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
+                            maxLength={gameMode === 'char' ? 1 : undefined}
+                        />
+                        <button onClick={makeGuess} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full md:w-auto text-[clamp(0.9rem,2vw,1.2rem)]">Guess</button>
+                        <button onClick={speakWord} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full md:w-auto text-[clamp(0.9rem,2vw,1.2rem)]">Read Word</button>
+                    </div>
                     <div id="message" className="text-[clamp(0.9rem,3vw,1.3rem)] text-[#e74c3c] mt-[1vh]">{message}</div>
                 </div>
             );
         };
 
         // Scoreboard Component
-        const Scoreboard = ({ correctWords, failedWords, score, totalPoints, remainingWords }) => {
+        const Scoreboard = ({ correctWords, failedWords, score, totalPoints, remainingWords, className }) => {
             return (
-                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col gap-[1vh] md:flex-1 md:order-1 md:max-w-[35vw]">
+                <div className={`m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col gap-[1vh] ${className}`}>
                     <div className="flex-1 min-w-[25vw] m-[0.5vh]">
                         <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Correctly Guessed</h3>
-                        <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[15vh]">
+                        <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[30vh]">
                             {correctWords.map((word, index) => <li key={index} className="bg-[#ecf0f1] m-[0.5vh_0] p-[0.5vh] rounded text-[clamp(0.8rem,2vw,1.1rem)]">{word}</li>)}
                         </ul>
                     </div>
                     <div className="flex-1 min-w-[25vw] m-[0.5vh]">
                         <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Failed to Guess</h3>
-                        <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[15vh]">
+                        <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[30vh]">
                             {failedWords.map((word, index) => <li key={index} className="bg-[#ecf0f1] m-[0.5vh_0] p-[0.5vh] rounded text-[clamp(0.8rem,2vw,1.1rem)]">{word}</li>)}
                         </ul>
                     </div>
@@ -582,9 +583,9 @@
         };
 
         // FinalScore Component
-        const FinalScore = ({ score, totalPoints, onRestart }) => {
+        const FinalScore = ({ score, totalPoints, onRestart, className }) => {
             return (
-                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center md:flex-2 md:order-2">
+                <div className={`m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center ${className}`}>
                     <h3 className="text-[#2c3e50] text-[clamp(1.2rem,3vw,1.8rem)]">Game Over - Final Score</h3>
                     <p className="text-[clamp(1.2rem,3vw,1.8rem)] text-[#27ae60] my-[2vh]">{`${score} / ${totalPoints}`}</p>
                     <button onClick={onRestart} className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] md:max-w-[15vw] text-[clamp(0.9rem,2vw,1.2rem)]">Start Over</button>
