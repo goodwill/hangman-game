@@ -37,15 +37,21 @@
             width: 50px;
             font-size: 16px;
         }
+        #version {
+            font-size: 14px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <h1>Hangman Game</h1>
+    <p id="version">Version 1.2</p>
     
     <div id="controls">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
         <br>
         <button onclick="startGame()">Start Game</button>
+        <button onclick="startOver()">Start Over</button>
         <button onclick="speakWord()">Read Word</button>
     </div>
 
@@ -136,7 +142,6 @@
                 return;
             }
 
-            // Clear the textarea after grabbing the words
             document.getElementById('word-input').value = '';
 
             selectedWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
@@ -149,8 +154,17 @@
             document.getElementById('hangman').textContent = hangmanStages[0];
             document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
             document.getElementById('guess-input').value = '';
-            document.getElementById('guess-input').disabled = false; // Re-enable in case it was disabled
+            document.getElementById('guess-input').disabled = false;
             document.getElementById('guess-input').focus();
+        }
+
+        function startOver() {
+            if (!document.getElementById('word-input').value) {
+                alert('Please enter some words to start over!');
+                document.getElementById('word-input').focus();
+                return;
+            }
+            startGame(); // Reuse startGame logic since it already resets everything
         }
 
         function makeGuess() {
@@ -202,7 +216,6 @@
             window.speechSynthesis.speak(speech);
         }
 
-        // Allow Enter key to trigger guess
         document.getElementById('guess-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') makeGuess();
         });
