@@ -568,33 +568,35 @@
             };
 
             const getMasterMindClue = (guess) => {
-                let clue = [];
                 const target = selectedWord.split('');
                 const guessed = guess.split('');
-                const used = new Set();
+                const clue = new Array(target.length).fill(''); // Initialize clue array to target length
+                const targetUsed = new Array(target.length).fill(false); // Track used target positions
+                const guessUsed = new Array(guessed.length).fill(false); // Track used guess positions
 
+                // Step 1: Assign black pegs (correct letter, correct position)
                 for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
                     if (guessed[i] === target[i]) {
-                        clue.push('black');
-                        used.add(i);
-                        target[i] = null;
+                        clue[i] = 'black';
+                        targetUsed[i] = true;
+                        guessUsed[i] = true;
                     }
                 }
 
+                // Step 2: Assign white pegs (correct letter, wrong position)
                 for (let i = 0; i < guessed.length; i++) {
-                    if (!clue[i] && target.includes(guessed[i])) {
-                        const pos = target.indexOf(guessed[i]);
-                        if (!used.has(pos)) {
-                            clue[i] = 'white';
-                            used.add(pos);
-                            target[pos] = null;
+                    if (!guessUsed[i]) { // Skip if already used for a black peg
+                        for (let j = 0; j < target.length; j++) {
+                            if (!targetUsed[j] && guessed[i] === target[j]) {
+                                clue[i] = 'white'; // Assign white peg at guess position
+                                targetUsed[j] = true;
+                                guessUsed[i] = true;
+                                break; // Move to next guess letter
+                            }
                         }
                     }
                 }
 
-                for (let i = clue.length; i < selectedWord.length; i++) {
-                    clue[i] = '';
-                }
                 return clue;
             };
 
