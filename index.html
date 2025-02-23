@@ -12,31 +12,39 @@
             padding: 20px;
             background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         h1 {
             color: #2c3e50;
-            font-size: 2.5em;
+            font-size: clamp(1.8em, 5vw, 2.5em);
             margin-bottom: 5px;
         }
         #version {
-            font-size: 1em;
+            font-size: clamp(0.8em, 3vw, 1em);
             color: #7f8c8d;
             margin-bottom: 20px;
         }
         #controls, #game, #scoreboard, #mode-selection, #final-score {
-            margin: 20px auto;
+            margin: 20px 0;
+            width: 100%;
             max-width: 600px;
             padding: 20px;
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             display: none;
+            box-sizing: border-box;
         }
         #controls.active, #game.active, #scoreboard.active, #mode-selection.active, #final-score.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         textarea {
             width: 100%;
+            max-width: 100%;
             height: 100px;
             margin: 10px 0;
             padding: 10px;
@@ -44,14 +52,17 @@
             border-radius: 5px;
             resize: none;
             font-size: 1em;
+            box-sizing: border-box;
         }
-        #word-list-select {
+        #word-list-select, select {
             width: 100%;
+            max-width: 100%;
             padding: 8px;
             margin: 10px 0;
             border: 1px solid #bdc3c7;
             border-radius: 5px;
             font-size: 1em;
+            box-sizing: border-box;
         }
         button {
             padding: 10px 20px;
@@ -63,15 +74,18 @@
             cursor: pointer;
             font-size: 1em;
             transition: background 0.3s;
+            width: auto;
+            min-width: 120px;
         }
         button:hover {
             background: #2980b9;
         }
         #word-display {
-            font-size: 2em;
+            font-size: clamp(1.5em, 4vw, 2em);
             margin: 20px 0;
             letter-spacing: 5px;
             color: #2c3e50;
+            word-break: break-all;
         }
         #guess-input {
             width: 50px;
@@ -79,26 +93,33 @@
             font-size: 1em;
             border: 1px solid #bdc3c7;
             border-radius: 5px;
-            margin-right: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
         }
         #guess-input.whole-word {
             width: 150px;
         }
         #game-container {
             display: flex;
+            flex-direction: row;
             justify-content: center;
             gap: 20px;
+            width: 100%;
+            flex-wrap: wrap;
         }
         #hangman-canvas {
             margin: 20px 0;
+            width: 200px;
+            height: 200px;
         }
         #message {
-            font-size: 1.1em;
+            font-size: clamp(0.9em, 3vw, 1.1em);
             color: #e74c3c;
             margin-top: 10px;
         }
         #scoreboard {
             display: flex;
+            flex-direction: row;
             justify-content: space-around;
             gap: 10px;
             flex-wrap: wrap;
@@ -106,10 +127,12 @@
         .list-container {
             flex: 1;
             min-width: 150px;
+            margin: 5px;
         }
         .list-container h3 {
             color: #2c3e50;
             margin-bottom: 10px;
+            font-size: clamp(1em, 3vw, 1.2em);
         }
         ul {
             list-style-type: none;
@@ -145,17 +168,47 @@
         }
         #final-score h3 {
             color: #2c3e50;
+            font-size: clamp(1.2em, 4vw, 1.5em);
         }
         #final-score-display {
-            font-size: 1.5em;
+            font-size: clamp(1.2em, 4vw, 1.5em);
             color: #27ae60;
             margin: 20px 0;
+        }
+        #mode-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        @media (max-width: 500px) {
+            #game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            button {
+                width: 100%;
+                min-width: unset;
+            }
+            #guess-input, #guess-input.whole-word {
+                width: 100%;
+                max-width: 150px;
+            }
+            #scoreboard {
+                flex-direction: column;
+                align-items: center;
+            }
+            .list-container {
+                width: 100%;
+                min-width: unset;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.10</p>
+    <p id="version">Version 1.11</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -168,9 +221,21 @@
 
     <div id="mode-selection">
         <h3>Choose Game Mode</h3>
-        <button onclick="startGame('char')">One Character Mode</button>
-        <button onclick="startGame('word')">Whole Word Mode</button>
-        <button onclick="startGame('mastermind')">MasterMind Mode</button>
+        <div id="mode-options">
+            <button onclick="startGame('char')">One Character Mode</button>
+            <button onclick="startGame('word')">Whole Word Mode</button>
+            <button onclick="startGame('mastermind')">MasterMind Mode</button>
+        </div>
+        <div id="mode-options">
+            <select id="accent-select">
+                <option value="en-US">American</option>
+                <option value="en-GB">British</option>
+            </select>
+            <select id="voice-select">
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+            </select>
+        </div>
     </div>
 
     <div id="game">
@@ -225,6 +290,8 @@
         let score = 0;
         let lastUsedWords = '';
         let guessAttempts = [];
+        let accent = 'en-US'; // Default: American
+        let voiceGender = 'female'; // Default: Female
 
         const canvas = document.getElementById('hangman-canvas');
         const ctx = canvas ? canvas.getContext('2d') : null;
@@ -331,6 +398,8 @@
 
         function startGame(mode) {
             gameMode = mode;
+            accent = document.getElementById('accent-select').value;
+            voiceGender = document.getElementById('voice-select').value;
             document.getElementById('mode-selection').classList.remove('active');
             document.getElementById('game').classList.add('active');
             document.getElementById('scoreboard').classList.add('active');
@@ -371,9 +440,7 @@
             guessInput.focus();
             updateScore();
 
-            const speech = new SpeechSynthesisUtterance(selectedWord);
-            speech.lang = 'en-US';
-            window.speechSynthesis.speak(speech);
+            speakWordWithVoice(selectedWord);
         }
 
         function getMasterMindClue(guess) {
@@ -549,10 +616,26 @@
                 alert('Start a game first!');
                 return;
             }
-            const speech = new SpeechSynthesisUtterance(selectedWord);
-            speech.lang = 'en-US';
+            speakWordWithVoice(selectedWord);
+        }
+
+        function speakWordWithVoice(word) {
+            const voices = window.speechSynthesis.getVoices();
+            const speech = new SpeechSynthesisUtterance(word);
+            speech.lang = accent;
+            const genderVoices = voices.filter(v => v.lang === accent);
+            const selectedVoice = genderVoices.find(v => 
+                (voiceGender === 'female' && v.name.toLowerCase().includes('female')) ||
+                (voiceGender === 'male' && !v.name.toLowerCase().includes('female'))
+            ) || genderVoices[0]; // Fallback to first available if no gender match
+            speech.voice = selectedVoice;
             window.speechSynthesis.speak(speech);
         }
+
+        // Load voices and ensure they're available
+        window.speechSynthesis.onvoiceschanged = () => {
+            // Triggered when voices are loaded
+        };
 
         document.getElementById('guess-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') makeGuess();
