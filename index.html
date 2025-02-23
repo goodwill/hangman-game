@@ -4,258 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hangman Game</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 2vh;
-            background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-        }
-        h1 {
-            color: #2c3e50;
-            font-size: clamp(1.8rem, 5vw, 3rem);
-            margin-bottom: 0.5vh;
-        }
-        #version {
-            font-size: clamp(0.8rem, 3vw, 1.2rem);
-            color: #7f8c8d;
-            margin-bottom: 2vh;
-        }
-        .container {
-            margin: 2vh 0;
-            width: 90vw;
-            max-width: 100%;
-            padding: 2vh;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: auto;
-        }
-        textarea {
-            width: 100%;
-            height: 15vh;
-            margin: 1vh 0;
-            padding: 1vh;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            resize: none;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-        }
-        select {
-            width: 100%;
-            padding: 1vh;
-            margin: 1vh 0;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-        }
-        button {
-            padding: 1vh 2vw;
-            margin: 0.5vh;
-            border: none;
-            border-radius: 5px;
-            background: #3498db;
-            color: #fff;
-            cursor: pointer;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            width: 100%;
-            max-width: 20vw;
-        }
-        button:hover {
-            background: #2980b9;
-        }
-        #word-display {
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            margin: 2vh 0;
-            letter-spacing: 0.5vw;
-            color: #2c3e50;
-            word-break: break-all;
-        }
-        #guess-input {
-            width: clamp(10vw, 15vw, 20vw);
-            padding: 1vh;
-            font-size: clamp(0.9rem, 2vw, 1.2rem);
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            margin: 1vh 0;
-        }
-        #guess-input.whole-word {
-            width: clamp(20vw, 30vw, 40vw);
-        }
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 2vh;
-            width: 100%;
-            height: auto;
-        }
-        #hangman-canvas {
-            margin: 2vh auto;
-            width: clamp(150px, 25vw, 300px);
-            height: clamp(150px, 25vw, 300px);
-        }
-        #message {
-            font-size: clamp(0.9rem, 3vw, 1.3rem);
-            color: #e74c3c;
-            margin-top: 1vh;
-        }
-        .scoreboard {
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 1vh;
-            height: auto;
-        }
-        .list-container {
-            flex: 1;
-            min-width: 25vw;
-            margin: 0.5vh;
-        }
-        .list-container h3 {
-            color: #2c3e50;
-            margin-bottom: 1vh;
-            font-size: clamp(1rem, 2.5vw, 1.4rem);
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-            max-height: 20vh;
-            overflow-y: auto;
-        }
-        li {
-            background: #ecf0f1;
-            margin: 0.5vh 0;
-            padding: 0.5vh;
-            border-radius: 3px;
-            font-size: clamp(0.8rem, 2vw, 1.1rem);
-        }
-        .guess-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .clue {
-            display: inline-flex;
-            gap: 0.2vw;
-        }
-        .clue-box {
-            width: clamp(10px, 1.5vw, 15px);
-            height: clamp(10px, 1.5vw, 15px);
-            border: 1px solid #bdc3c7;
-        }
-        .clue-box.black {
-            background: #2c3e50;
-        }
-        .clue-box.white {
-            background: #fff;
-        }
-        .final-score h3 {
-            color: #2c3e50;
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-        }
-        .final-score-display {
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            color: #27ae60;
-            margin: 2vh 0;
-        }
-        .mode-options {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1vh;
-            justify-content: center;
-            margin-top: 1vh;
-            width: 100%;
-        }
-        #main-container {
-            width: 95vw;
-            max-width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 2vh;
-            flex-grow: 1;
-            height: auto;
-        }
-        @media (min-width: 768px) {
-            #main-container {
-                flex-direction: row;
-                align-items: stretch;
-                height: calc(100vh - 15vh); /* Adjust for header and padding */
-            }
-            .container {
-                height: 100%;
-                overflow-y: auto;
-            }
-            .game {
-                flex: 2;
-                order: 2;
-            }
-            .scoreboard {
-                flex: 1;
-                order: 1;
-                max-width: 35vw;
-            }
-            .game-container {
-                flex-direction: row;
-                flex-wrap: wrap;
-                align-items: center;
-                height: auto;
-            }
-            #main-container.finish-screen {
-                flex-direction: row;
-            }
-            #main-container.finish-screen .scoreboard {
-                flex: 1;
-                order: 1;
-                max-width: 35vw;
-            }
-            #main-container.finish-screen .final-score {
-                flex: 2;
-                order: 2;
-            }
-            #main-container.finish-screen .game {
-                display: none;
-            }
-            button {
-                width: auto;
-                max-width: 15vw;
-            }
-            #guess-input {
-                width: clamp(5vw, 10vw, 15vw);
-            }
-            #guess-input.whole-word {
-                width: clamp(15vw, 20vw, 25vw);
-            }
-        }
-        @media (max-width: 767px) {
-            #main-container {
-                height: auto;
-                min-height: calc(100vh - 15vh);
-            }
-            .container {
-                width: 95vw;
-                height: auto;
-            }
-            .game-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            ul {
-                max-height: 15vh;
-            }
-        }
-    </style>
+    <!-- Load Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="font-sans text-center m-0 p-[2vh] bg-gradient-to-b from-[#f0f4f8] to-[#d9e2ec] min-h-screen flex flex-col items-center overflow-x-hidden">
     <div id="root"></div>
 
     <!-- Load React and Babel via CDN -->
@@ -340,9 +92,9 @@
 
             return (
                 <div>
-                    <h1>Hangman Game</h1>
-                    <p id="version">Version 1.22</p>
-                    <div id="main-container" className={gameState === 'finished' ? 'finish-screen' : ''}>
+                    <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.23</p>
+                    <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'finished' ? 'md:flex-row' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
                             <ModeSelection
@@ -428,13 +180,17 @@
             };
 
             return (
-                <div className="container">
+                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center">
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Enter words separated by commas or spaces"
+                        className="w-full h-[15vh] m-[1vh_0] p-[1vh] border border-[#bdc3c7] rounded-md resize-none text-[clamp(0.9rem,2vw,1.2rem)]"
                     />
-                    <select onChange={(e) => setInput(e.target.value)}>
+                    <select
+                        onChange={(e) => setInput(e.target.value)}
+                        className="w-full p-[1vh] m-[1vh_0] border border-[#bdc3c7] rounded-md text-[clamp(0.9rem,2vw,1.2rem)]"
+                    >
                         <option value="">Select a previous word list</option>
                         {wordLists.map((list, index) => (
                             <option key={index} value={list}>
@@ -442,7 +198,12 @@
                             </option>
                         ))}
                     </select>
-                    <button onClick={handleSubmit}>Submit Words</button>
+                    <button
+                        onClick={handleSubmit}
+                        className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] text-[clamp(0.9rem,2vw,1.2rem)]"
+                    >
+                        Submit Words
+                    </button>
                 </div>
             );
         };
@@ -479,20 +240,21 @@
             const allEnglishVoices = [...preferredAvailable, ...otherEnglish];
 
             return (
-                <div className="container">
-                    <h3>Choose Game Mode</h3>
-                    <div className="mode-options">
-                        <button onClick={() => onStart('char')}>One Character Mode</button>
-                        <button onClick={() => onStart('word')}>Whole Word Mode</button>
-                        <button onClick={() => onStart('mastermind')}>MasterMind Mode</button>
+                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center">
+                    <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Choose Game Mode</h3>
+                    <div className="flex flex-wrap gap-[1vh] justify-center mt-[1vh] w-full">
+                        <button onClick={() => onStart('char')} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] text-[clamp(0.9rem,2vw,1.2rem)] md:max-w-[15vw] w-full max-w-[20vw]">One Character Mode</button>
+                        <button onClick={() => onStart('word')} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] text-[clamp(0.9rem,2vw,1.2rem)] md:max-w-[15vw] w-full max-w-[20vw]">Whole Word Mode</button>
+                        <button onClick={() => onStart('mastermind')} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] text-[clamp(0.9rem,2vw,1.2rem)] md:max-w-[15vw] w-full max-w-[20vw]">MasterMind Mode</button>
                     </div>
-                    <div className="mode-options">
+                    <div className="flex flex-wrap gap-[1vh] justify-center mt-[1vh] w-full">
                         <select
                             value={selectedVoice?.name || ''}
                             onChange={(e) => {
                                 const voice = allEnglishVoices.find(v => v.name === e.target.value);
                                 setSelectedVoice(voice || null);
                             }}
+                            className="w-full p-[1vh] border border-[#bdc3c7] rounded-md text-[clamp(0.9rem,2vw,1.2rem)]"
                         >
                             <option value="">Select a voice</option>
                             {allEnglishVoices.length > 0 ? (
@@ -546,25 +308,66 @@
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
-                const width = canvas.width;
-                const height = canvas.height;
-                ctx.clearRect(0, 0, width, height);
+                const dpr = window.devicePixelRatio || 1;
+                const size = 300; // Square logical size
+
+                // Set display size (CSS)
+                canvas.style.width = `${size}px`;
+                canvas.style.height = `${size}px`;
+
+                // Set drawing buffer size (adjusted for DPR)
+                canvas.width = size * dpr;
+                canvas.height = size * dpr;
+                ctx.scale(dpr, dpr);
+
+                // Clear canvas
+                ctx.clearRect(0, 0, size, size);
                 ctx.strokeStyle = '#2c3e50';
                 ctx.lineWidth = 2;
 
+                // Draw hangman parts with corrected proportions
                 ctx.beginPath();
-                ctx.moveTo(width * 0.25, height * 0.9); ctx.lineTo(width * 0.75, height * 0.9); // Base
-                ctx.moveTo(width * 0.5, height * 0.9); ctx.lineTo(width * 0.5, height * 0.1); // Pole
-                ctx.moveTo(width * 0.5, height * 0.1); ctx.lineTo(width * 0.7, height * 0.1); // Top
-                ctx.moveTo(width * 0.7, height * 0.1); ctx.lineTo(width * 0.7, height * 0.2); // Rope
+                ctx.moveTo(size * 0.2, size * 0.9); ctx.lineTo(size * 0.8, size * 0.9); // Base
+                ctx.moveTo(size * 0.5, size * 0.9); ctx.lineTo(size * 0.5, size * 0.1); // Pole
+                ctx.moveTo(size * 0.5, size * 0.1); ctx.lineTo(size * 0.7, size * 0.1); // Top
+                ctx.moveTo(size * 0.7, size * 0.1); ctx.lineTo(size * 0.7, size * 0.2); // Rope
                 ctx.stroke();
 
-                if (guessesLeft < 6) { ctx.beginPath(); ctx.arc(width * 0.7, height * 0.3, height * 0.1, 0, Math.PI * 2); ctx.stroke(); }
-                if (guessesLeft < 5) { ctx.beginPath(); ctx.moveTo(width * 0.7, height * 0.4); ctx.lineTo(width * 0.7, height * 0.6); ctx.stroke(); }
-                if (guessesLeft < 4) { ctx.beginPath(); ctx.moveTo(width * 0.7, height * 0.45); ctx.lineTo(width * 0.6, height * 0.55); ctx.stroke(); }
-                if (guessesLeft < 3) { ctx.beginPath(); ctx.moveTo(width * 0.7, height * 0.45); ctx.lineTo(width * 0.8, height * 0.55); ctx.stroke(); }
-                if (guessesLeft < 2) { ctx.beginPath(); ctx.moveTo(width * 0.7, height * 0.6); ctx.lineTo(width * 0.6, height * 0.75); ctx.stroke(); }
-                if (guessesLeft < 1) { ctx.beginPath(); ctx.moveTo(width * 0.7, height * 0.6); ctx.lineTo(width * 0.8, height * 0.75); ctx.stroke(); }
+                if (guessesLeft < 6) { 
+                    ctx.beginPath(); 
+                    ctx.arc(size * 0.7, size * 0.3, size * 0.1, 0, Math.PI * 2); 
+                    ctx.stroke(); 
+                } // Head
+                if (guessesLeft < 5) { 
+                    ctx.beginPath(); 
+                    ctx.moveTo(size * 0.7, size * 0.4); 
+                    ctx.lineTo(size * 0.7, size * 0.6); 
+                    ctx.stroke(); 
+                } // Body
+                if (guessesLeft < 4) { 
+                    ctx.beginPath(); 
+                    ctx.moveTo(size * 0.7, size * 0.45); 
+                    ctx.lineTo(size * 0.6, size * 0.55); 
+                    ctx.stroke(); 
+                } // Left Arm
+                if (guessesLeft < 3) { 
+                    ctx.beginPath(); 
+                    ctx.moveTo(size * 0.7, size * 0.45); 
+                    ctx.lineTo(size * 0.8, size * 0.55); 
+                    ctx.stroke(); 
+                } // Right Arm
+                if (guessesLeft < 2) { 
+                    ctx.beginPath(); 
+                    ctx.moveTo(size * 0.7, size * 0.6); 
+                    ctx.lineTo(size * 0.6, size * 0.75); 
+                    ctx.stroke(); 
+                } // Left Leg
+                if (guessesLeft < 1) { 
+                    ctx.beginPath(); 
+                    ctx.moveTo(size * 0.7, size * 0.6); 
+                    ctx.lineTo(size * 0.8, size * 0.75); 
+                    ctx.stroke(); 
+                } // Right Leg
             };
 
             const startNextWord = () => {
@@ -591,7 +394,6 @@
                 const targetUsed = new Array(target.length).fill(false);
                 const guessUsed = new Array(guessed.length).fill(false);
 
-                // Step 1: Assign black pegs (correct letter, correct position)
                 for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
                     if (guessed[i] === target[i]) {
                         clue[i] = 'black';
@@ -600,7 +402,6 @@
                     }
                 }
 
-                // Step 2: Assign white pegs (correct letter, wrong position)
                 for (let i = 0; i < guessed.length; i++) {
                     if (!guessUsed[i]) {
                         for (let j = 0; j < target.length; j++) {
@@ -711,21 +512,25 @@
             };
 
             return (
-                <div className="container game">
-                    <div id="word-display">{hiddenWord}</div>
+                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center md:flex-2 md:order-2">
+                    <div id="word-display" className="text-[clamp(1.5rem,4vw,2.5rem)] my-[2vh] tracking-[0.5vw] text-[#2c3e50] break-all">{hiddenWord}</div>
                     <div>Total characters: {selectedWord.length}</div>
-                    <div className="game-container">
-                        <canvas ref={canvasRef} id="hangman-canvas"></canvas>
-                        <div className="list-container">
-                            <h3>Guess Attempts</h3>
-                            <ul className="guess-list">
+                    <div className="flex flex-col justify-center gap-[2vh] w-full md:flex-row md:flex-wrap md:items-center">
+                        <canvas 
+                            ref={canvasRef} 
+                            id="hangman-canvas" 
+                            className="m-[2vh_auto] w-[300px] h-[300px] max-w-[min(300px,75vw)] max-h-[min(300px,75vw)]"
+                        ></canvas>
+                        <div className="flex-1 min-w-[25vw] m-[0.5vh]">
+                            <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Guess Attempts</h3>
+                            <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[15vh]">
                                 {guessAttempts.map(({ guess, clue }, index) => (
-                                    <li key={index}>
+                                    <li key={index} className="bg-[#ecf0f1] m-[0.5vh_0] p-[0.5vh] rounded flex justify-between items-center text-[clamp(0.8rem,2vw,1.1rem)]">
                                         {guess}
                                         {clue && (
-                                            <span className="clue">
+                                            <span className="inline-flex gap-[0.2vw]">
                                                 {clue.map((c, i) => (
-                                                    <span key={i} className={`clue-box ${c}`}></span>
+                                                    <span key={i} className={`w-[clamp(10px,1.5vw,15px)] h-[clamp(10px,1.5vw,15px)] border border-[#bdc3c7] ${c === 'black' ? 'bg-[#2c3e50]' : c === 'white' ? 'bg-white' : ''}`}></span>
                                                 ))}
                                             </span>
                                         )}
@@ -740,13 +545,13 @@
                         value={guessInput}
                         onChange={(e) => setGuessInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && makeGuess()}
-                        className={gameMode !== 'char' ? 'whole-word' : ''}
+                        className={`p-[1vh] border border-[#bdc3c7] rounded-md m-[1vh_0] text-[clamp(0.9rem,2vw,1.2rem)] ${gameMode !== 'char' ? 'w-[clamp(20vw,30vw,40vw)] md:w-[clamp(15vw,20vw,25vw)]' : 'w-[clamp(10vw,15vw,20vw)] md:w-[clamp(5vw,10vw,15vw)]'}`}
                         placeholder={gameMode === 'char' ? 'Guess a letter' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
                         maxLength={gameMode === 'char' ? 1 : undefined}
                     />
-                    <button onClick={makeGuess}>Guess</button>
-                    <button onClick={speakWord}>Read Word</button>
-                    <div id="message">{message}</div>
+                    <button onClick={makeGuess} className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] md:max-w-[15vw] text-[clamp(0.9rem,2vw,1.2rem)]">Guess</button>
+                    <button onClick={speakWord} className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] md:max-w-[15vw] text-[clamp(0.9rem,2vw,1.2rem)]">Read Word</button>
+                    <div id="message" className="text-[clamp(0.9rem,3vw,1.3rem)] text-[#e74c3c] mt-[1vh]">{message}</div>
                 </div>
             );
         };
@@ -754,23 +559,23 @@
         // Scoreboard Component
         const Scoreboard = ({ correctWords, failedWords, score, totalPoints, remainingWords }) => {
             return (
-                <div className="container scoreboard">
-                    <div className="list-container">
-                        <h3>Correctly Guessed</h3>
-                        <ul>
-                            {correctWords.map((word, index) => <li key={index}>{word}</li>)}
+                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col gap-[1vh] md:flex-1 md:order-1 md:max-w-[35vw]">
+                    <div className="flex-1 min-w-[25vw] m-[0.5vh]">
+                        <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Correctly Guessed</h3>
+                        <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[15vh]">
+                            {correctWords.map((word, index) => <li key={index} className="bg-[#ecf0f1] m-[0.5vh_0] p-[0.5vh] rounded text-[clamp(0.8rem,2vw,1.1rem)]">{word}</li>)}
                         </ul>
                     </div>
-                    <div className="list-container">
-                        <h3>Failed to Guess</h3>
-                        <ul>
-                            {failedWords.map((word, index) => <li key={index}>{word}</li>)}
+                    <div className="flex-1 min-w-[25vw] m-[0.5vh]">
+                        <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Failed to Guess</h3>
+                        <ul className="list-none p-0 max-h-[20vh] overflow-y-auto md:max-h-[15vh]">
+                            {failedWords.map((word, index) => <li key={index} className="bg-[#ecf0f1] m-[0.5vh_0] p-[0.5vh] rounded text-[clamp(0.8rem,2vw,1.1rem)]">{word}</li>)}
                         </ul>
                     </div>
-                    <div className="list-container">
-                        <h3>Score</h3>
-                        <p>{`${score} / ${totalPoints}`}</p>
-                        <p>Remaining Words: {remainingWords.length}</p>
+                    <div className="flex-1 min-w-[25vw] m-[0.5vh]">
+                        <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Score</h3>
+                        <p className="text-[clamp(0.8rem,2vw,1.1rem)]">{`${score} / ${totalPoints}`}</p>
+                        <p className="text-[clamp(0.8rem,2vw,1.1rem)]">Remaining Words: {remainingWords.length}</p>
                     </div>
                 </div>
             );
@@ -779,10 +584,10 @@
         // FinalScore Component
         const FinalScore = ({ score, totalPoints, onRestart }) => {
             return (
-                <div className="container final-score">
-                    <h3>Game Over - Final Score</h3>
-                    <p className="final-score-display">{`${score} / ${totalPoints}`}</p>
-                    <button onClick={onRestart}>Start Over</button>
+                <div className="m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center md:flex-2 md:order-2">
+                    <h3 className="text-[#2c3e50] text-[clamp(1.2rem,3vw,1.8rem)]">Game Over - Final Score</h3>
+                    <p className="text-[clamp(1.2rem,3vw,1.8rem)] text-[#27ae60] my-[2vh]">{`${score} / ${totalPoints}`}</p>
+                    <button onClick={onRestart} className="p-[1vh_2vw] m-[0.5vh] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full max-w-[20vw] md:max-w-[15vw] text-[clamp(0.9rem,2vw,1.2rem)]">Start Over</button>
                 </div>
             );
         };
