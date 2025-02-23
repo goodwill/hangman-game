@@ -34,10 +34,12 @@
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: none;
             box-sizing: border-box;
         }
-        #controls.active, #game.active, #scoreboard.active, #mode-selection.active, #final-score.active {
+        #controls, #mode-selection, #final-score {
+            display: none;
+        }
+        #controls.active, #mode-selection.active, #final-score.active {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -101,11 +103,10 @@
         }
         #game-container {
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             justify-content: center;
             gap: 20px;
             width: 100%;
-            flex-wrap: wrap;
         }
         #hangman-canvas {
             margin: 20px 0;
@@ -119,10 +120,9 @@
         }
         #scoreboard {
             display: flex;
-            flex-direction: row;
-            justify-content: space-around;
+            flex-direction: column;
+            justify-content: space-between;
             gap: 10px;
-            flex-wrap: wrap;
         }
         .list-container {
             flex: 1;
@@ -182,7 +182,48 @@
             justify-content: center;
             margin-top: 10px;
         }
-        @media (max-width: 500px) {
+        #main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            #main-container {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            #game.active {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 2;
+                order: 2;
+            }
+            #scoreboard.active {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                order: 1;
+                max-width: 300px;
+            }
+            #game-container {
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+        }
+        @media (max-width: 767px) {
+            #game.active {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            #scoreboard.active {
+                display: flex;
+                flex-direction: column;
+            }
             #game-container {
                 flex-direction: column;
                 align-items: center;
@@ -195,20 +236,12 @@
                 width: 100%;
                 max-width: 150px;
             }
-            #scoreboard {
-                flex-direction: column;
-                align-items: center;
-            }
-            .list-container {
-                width: 100%;
-                min-width: unset;
-            }
         }
     </style>
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.15</p>
+    <p id="version">Version 1.16</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -233,35 +266,37 @@
         </div>
     </div>
 
-    <div id="game">
-        <div id="word-display"></div>
-        <div id="char-count"></div>
-        <div id="game-container">
-            <canvas id="hangman-canvas" width="200" height="200"></canvas>
-            <div class="list-container">
-                <h3>Guess Attempts</h3>
-                <ul id="guess-list"></ul>
+    <div id="main-container">
+        <div id="game">
+            <div id="word-display"></div>
+            <div id="char-count"></div>
+            <div id="game-container">
+                <canvas id="hangman-canvas" width="200" height="200"></canvas>
+                <div class="list-container">
+                    <h3>Guess Attempts</h3>
+                    <ul id="guess-list"></ul>
+                </div>
             </div>
+            <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
+            <button onclick="makeGuess()">Guess</button>
+            <button onclick="speakWord()">Read Word</button>
+            <div id="message"></div>
         </div>
-        <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
-        <button onclick="makeGuess()">Guess</button>
-        <button onclick="speakWord()">Read Word</button>
-        <div id="message"></div>
-    </div>
 
-    <div id="scoreboard">
-        <div class="list-container">
-            <h3>Correctly Guessed</h3>
-            <ul id="correct-list"></ul>
-        </div>
-        <div class="list-container">
-            <h3>Failed to Guess</h3>
-            <ul id="failed-list"></ul>
-        </div>
-        <div class="list-container">
-            <h3>Score</h3>
-            <p id="score">0 / 0</p>
-            <p id="remaining">Remaining Words: 0</p>
+        <div id="scoreboard">
+            <div class="list-container">
+                <h3>Correctly Guessed</h3>
+                <ul id="correct-list"></ul>
+            </div>
+            <div class="list-container">
+                <h3>Failed to Guess</h3>
+                <ul id="failed-list"></ul>
+            </div>
+            <div class="list-container">
+                <h3>Score</h3>
+                <p id="score">0 / 0</p>
+                <p id="remaining">Remaining Words: 0</p>
+            </div>
         </div>
     </div>
 
