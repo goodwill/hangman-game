@@ -76,9 +76,13 @@
         #guess-input.whole-word {
             width: 150px;
         }
+        #game-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
         #hangman-canvas {
-            margin: 20px auto;
-            display: block;
+            margin: 20px 0;
         }
         #message {
             font-size: 1.1em;
@@ -111,6 +115,26 @@
             padding: 5px;
             border-radius: 3px;
         }
+        #guess-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clue {
+            display: inline-flex;
+            gap: 2px;
+        }
+        .clue-box {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #bdc3c7;
+        }
+        .clue-box.black {
+            background: #2c3e50;
+        }
+        .clue-box.white {
+            background: #fff;
+        }
         #final-score h3 {
             color: #2c3e50;
         }
@@ -123,7 +147,7 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.8</p>
+    <p id="version">Version 1.9</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -135,20 +159,23 @@
         <h3>Choose Game Mode</h3>
         <button onclick="startGame('char')">One Character Mode</button>
         <button onclick="startGame('word')">Whole Word Mode</button>
+        <button onclick="startGame('mastermind')">MasterMind Mode</button>
     </div>
 
     <div id="game">
         <div id="word-display"></div>
         <div id="char-count"></div>
-        <canvas id="hangman-canvas" width="200" height="200"></canvas>
+        <div id="game-container">
+            <canvas id="hangman-canvas" width="200" height="200"></canvas>
+            <div class="list-container">
+                <h3>Guess Attempts</h3>
+                <ul id="guess-list"></ul>
+            </div>
+        </div>
         <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
         <button onclick="makeGuess()">Guess</button>
         <button onclick="speakWord()">Read Word</button>
         <div id="message"></div>
-        <div class="list-container">
-            <h3>Guess Attempts</h3>
-            <ul id="guess-list"></ul>
-        </div>
     </div>
 
     <div id="scoreboard">
@@ -291,17 +318,51 @@
             const guessInput = document.getElementById('guess-input');
             guessInput.value = '';
             guessInput.disabled = false;
-            if (gameMode === 'word') {
-                guessInput.classList.add('whole-word');
-                guessInput.removeAttribute('maxlength');
-                guessInput.placeholder = 'Guess whole word';
-            } else {
+            if (gameMode === 'char') {
                 guessInput.classList.remove('whole-word');
                 guessInput.setAttribute('maxlength', '1');
                 guessInput.placeholder = 'Guess a letter';
+            } else {
+                guessInput.classList.add('whole-word');
+                guessInput.removeAttribute('maxlength');
+                guessInput.placeholder = gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word';
             }
             guessInput.focus();
             updateScore();
+        }
+
+        function getMasterMindClue(guess) {
+            let clue = [];
+            const target = selectedWord.split('');
+            const guessed = guess.split('');
+            const used = new Set();
+
+            // First pass: Black boxes (correct char, correct position)
+            for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
+                if (guessed[i] === target[i]) {
+                    clue.push('black');
+                    used.add(i);
+                    target[i] = null; // Mark as used
+                }
+            }
+
+            // Second pass: White boxes (correct char, wrong position)
+            for (let i = 0; i < guessed.length; i++) {
+                if (!clue[i] && target.includes(guessed[i])) {
+                    const pos = target.indexOf(guessed[i]);
+                    if (!used.has(pos)) {
+                        clue[i] = 'white';
+                        used.add(pos);
+                        target[pos] = null;
+                    }
+                }
+            }
+
+            // Fill remaining with empty boxes
+            for (let i = clue.length; i < selectedWord.length; i++) {
+                clue[i] = '';
+            }
+            return clue;
         }
 
         function makeGuess() {
@@ -309,7 +370,7 @@
             const guess = guessInput.value.toLowerCase().trim();
 
             if (!guess) {
-                speakWord(); // Trigger Read Word if input is empty
+                speakWord();
                 return;
             }
 
@@ -323,7 +384,7 @@
                     return;
                 }
                 guessedLetters.add(guess);
-                guessAttempts.push(guess);
+                guessAttempts.unshift({ guess, clue: null }); // Latest on top, no clue
                 guessInput.value = '';
                 updateGuessList();
 
@@ -356,13 +417,14 @@
                         setTimeout(startNextWord, 1000);
                     }
                 }
-            } else { // Whole Word Mode
+            } else { // Whole Word Mode or MasterMind Mode
                 if (guessedLetters.has(guess)) {
                     alert('You already guessed that word!');
                     return;
                 }
                 guessedLetters.add(guess);
-                guessAttempts.push(guess);
+                const clue = gameMode === 'mastermind' ? getMasterMindClue(guess) : null;
+                guessAttempts.unshift({ guess, clue }); // Latest on top
                 guessInput.value = '';
                 updateGuessList();
 
@@ -394,7 +456,15 @@
 
         function updateGuessList() {
             const guessList = document.getElementById('guess-list');
-            guessList.innerHTML = guessAttempts.map(guess => `<li>${guess}</li>`).join('');
+            guessList.innerHTML = guessAttempts.map(({ guess, clue }) => {
+                let clueHtml = '';
+                if (clue) {
+                    clueHtml = '<span class="clue">' + 
+                        clue.map(c => `<span class="clue-box ${c}"></span>`).join('') + 
+                        '</span>';
+                }
+                return `<li>${guess} ${clueHtml}</li>`;
+            }).join('');
         }
 
         function updateLists() {
