@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #word-display {
+            font-size: 24px;
+            margin: 20px;
+            letter-spacing: 5px;
+        }
+        #controls {
+            margin: 20px;
+        }
+        textarea {
+            width: 300px;
+            height: 100px;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hangman Game</h1>
+    
+    <div id="controls">
+        <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
+        <br>
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="speakWord()">Read Word</button>
+    </div>
+
+    <div id="word-display"></div>
+    <div id="char-count"></div>
+
+    <script>
+        let selectedWord = '';
+        let hiddenWord = '';
+
+        function startGame() {
+            const input = document.getElementById('word-input').value.trim();
+            if (!input) {
+                alert('Please enter some words first!');
+                return;
+            }
+
+            // Split input by commas or spaces, filter out empty entries
+            const words = input.split(/[\s,]+/).filter(word => word.length > 0);
+            if (words.length === 0) {
+                alert('Please enter valid words!');
+                return;
+            }
+
+            // Randomly select a word
+            selectedWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+            
+            // Create hidden word display with dashes
+            hiddenWord = '-'.repeat(selectedWord.length);
+            document.getElementById('word-display').textContent = hiddenWord;
+            
+            // Show character count
+            document.getElementById('char-count').textContent = 
+                `Total characters: ${selectedWord.length}`;
+        }
+
+        function speakWord() {
+            if (!selectedWord) {
+                alert('Start a game first!');
+                return;
+            }
+
+            // Use SpeechSynthesis API to read the word
+            const speech = new SpeechSynthesisUtterance(selectedWord);
+            speech.lang = 'en-US'; // Set language to English
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+</body>
+</html>
