@@ -208,7 +208,7 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.12</p>
+    <p id="version">Version 1.13</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -598,40 +598,53 @@
             const speech = new SpeechSynthesisUtterance(word);
             speech.lang = accent;
 
-            // High-quality voice selection
+            // High-quality voice selection optimized for Safari
             const availableVoices = window.speechSynthesis.getVoices();
             let selectedVoice = null;
 
-            // Preferred high-quality voices
+            // Preferred voices for Chrome and Safari
             const preferredVoices = {
                 'en-US': {
-                    female: ['Google US English', 'Microsoft Zira Desktop', 'Samantha'],
-                    male: ['Google US English Male', 'Microsoft David Desktop', 'Alex']
+                    female: ['Samantha', 'Google US English', 'Microsoft Zira Desktop'], // Samantha for Safari
+                    male: ['Alex', 'Google US English Male', 'Microsoft David Desktop']   // Alex for Safari
                 },
                 'en-GB': {
-                    female: ['Google UK English Female', 'Microsoft Hazel Desktop', 'Susan'],
-                    male: ['Google UK English Male', 'Microsoft George Desktop', 'Daniel']
+                    female: ['Kate', 'Google UK English Female', 'Microsoft Hazel Desktop'], // Kate for Safari
+                    male: ['Daniel', 'Google UK English Male', 'Microsoft George Desktop']   // Daniel for Safari
                 }
             };
 
-            // Find a matching high-quality voice
+            // Detect Safari
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+            // Choose voices with Safari preference
             const accentVoices = preferredVoices[accent][voiceGender];
             for (const voiceName of accentVoices) {
-                selectedVoice = availableVoices.find(v => v.name.includes(voiceName));
+                selectedVoice = availableVoices.find(v => v.name === voiceName && v.lang === accent);
                 if (selectedVoice) break;
             }
 
-            // Fallback: First matching accent and approximate gender
-            if (!selectedVoice) {
-                const genderFilter = voiceGender === 'female' ? 'female' : 'male';
+            // Safari-specific fallback: Prioritize system voices if no match
+            if (!selectedVoice && isSafari) {
                 selectedVoice = availableVoices.find(v => 
                     v.lang === accent && 
-                    (v.name.toLowerCase().includes(genderFilter) || 
-                     (genderFilter === 'male' && !v.name.toLowerCase().includes('female')))
-                ) || availableVoices.find(v => v.lang === accent); // Ultimate fallback
+                    (v.name === (voiceGender === 'female' ? 'Samantha' : 'Alex') || 
+                     v.name === (voiceGender === 'female' ? 'Kate' : 'Daniel'))
+                );
             }
 
-            speech.voice = selectedVoice || availableVoices[0]; // Final fallback to first voice
+            // General fallback: First matching accent and approximate gender
+            if (!selectedVoice) {
+                selectedVoice = availableVoices.find(v => 
+                    v.lang === accent && 
+                    (v.name.toLowerCase().includes(voiceGender) || 
+                     (voiceGender === 'male' && !v.name.toLowerCase().includes('female')))
+                ) || availableVoices.find(v => v.lang === accent);
+            }
+
+            speech.voice = selectedVoice || availableVoices[0]; // Final fallback
+            speech.rate = 1.0; // Normalize speed for consistency
+            speech.pitch = 1.0; // Normalize pitch
             window.speechSynthesis.speak(speech);
         }
 
@@ -641,6 +654,9 @@
             if (voices.length === 0) {
                 window.speechSynthesis.onvoiceschanged = () => {
                     voices = window.speechSynthesis.getVoices();
+                    if (voices.length > 0) {
+                        window.speechSynthesis.onvoiceschanged = null; // Remove listener after loading
+                    }
                 };
             }
         }
