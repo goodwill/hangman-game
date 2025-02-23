@@ -37,6 +37,9 @@
             width: 50px;
             font-size: 16px;
         }
+        #guess-input.whole-word {
+            width: 150px;
+        }
         #version {
             font-size: 14px;
             color: #666;
@@ -45,12 +48,13 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.2</p>
+    <p id="version">Version 1.3</p>
     
     <div id="controls">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
         <br>
-        <button onclick="startGame()">Start Game</button>
+        <button onclick="startGame('char')">Start (One Character Mode)</button>
+        <button onclick="startGame('word')">Start (Whole Word Mode)</button>
         <button onclick="startOver()">Start Over</button>
         <button onclick="speakWord()">Read Word</button>
     </div>
@@ -69,6 +73,7 @@
         let hiddenWord = '';
         let guessesLeft = 6;
         let guessedLetters = new Set();
+        let gameMode = 'char'; // 'char' for One Character Mode, 'word' for Whole Word Mode
 
         const hangmanStages = [
             `
@@ -129,7 +134,7 @@
 =========`
         ];
 
-        function startGame() {
+        function startGame(mode) {
             const input = document.getElementById('word-input').value.trim();
             if (!input) {
                 alert('Please enter some words first!');
@@ -143,6 +148,7 @@
             }
 
             document.getElementById('word-input').value = '';
+            gameMode = mode;
 
             selectedWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
             hiddenWord = '-'.repeat(selectedWord.length);
@@ -153,9 +159,20 @@
             document.getElementById('char-count').textContent = `Total characters: ${selectedWord.length}`;
             document.getElementById('hangman').textContent = hangmanStages[0];
             document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
-            document.getElementById('guess-input').value = '';
-            document.getElementById('guess-input').disabled = false;
-            document.getElementById('guess-input').focus();
+
+            const guessInput = document.getElementById('guess-input');
+            guessInput.value = '';
+            guessInput.disabled = false;
+            if (gameMode === 'word') {
+                guessInput.classList.add('whole-word');
+                guessInput.removeAttribute('maxlength');
+                guessInput.placeholder = 'Guess whole word';
+            } else {
+                guessInput.classList.remove('whole-word');
+                guessInput.setAttribute('maxlength', '1');
+                guessInput.placeholder = 'Guess a letter';
+            }
+            guessInput.focus();
         }
 
         function startOver() {
@@ -164,44 +181,74 @@
                 document.getElementById('word-input').focus();
                 return;
             }
-            startGame(); // Reuse startGame logic since it already resets everything
+            startGame(gameMode); // Restart with the same mode
         }
 
         function makeGuess() {
-            const guess = document.getElementById('guess-input').value.toLowerCase();
-            if (!guess || guess.length !== 1 || !/[a-z]/.test(guess)) {
-                alert('Please enter a single letter!');
+            const guessInput = document.getElementById('guess-input');
+            const guess = guessInput.value.toLowerCase().trim();
+
+            if (!guess) {
+                alert('Please enter a guess!');
                 return;
             }
 
-            if (guessedLetters.has(guess)) {
-                alert('You already guessed that letter!');
-                return;
-            }
-
-            guessedLetters.add(guess);
-            document.getElementById('guess-input').value = '';
-
-            if (selectedWord.includes(guess)) {
-                let newHiddenWord = '';
-                for (let i = 0; i < selectedWord.length; i++) {
-                    newHiddenWord += (selectedWord[i] === guess) ? guess : hiddenWord[i];
+            if (gameMode === 'char') {
+                if (guess.length !== 1 || !/[a-z]/.test(guess)) {
+                    alert('Please enter a single letter!');
+                    return;
                 }
-                hiddenWord = newHiddenWord;
-                document.getElementById('word-display').textContent = hiddenWord;
+                if (guessedLetters.has(guess)) {
+                    alert('You already guessed that letter!');
+                    return;
+                }
+                guessedLetters.add(guess);
+                guessInput.value = '';
 
-                if (!hiddenWord.includes('-')) {
+                if (selectedWord.includes(guess)) {
+                    let newHiddenWord = '';
+                    for (let i = 0; i < selectedWord.length; i++) {
+                        newHiddenWord += (selectedWord[i] === guess) ? guess : hiddenWord[i];
+                    }
+                    hiddenWord = newHiddenWord;
+                    document.getElementById('word-display').textContent = hiddenWord;
+
+                    if (!hiddenWord.includes('-')) {
+                        document.getElementById('message').textContent = 'You win!';
+                        guessInput.disabled = true;
+                    }
+                } else {
+                    guessesLeft--;
+                    document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
+                    document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
+
+                    if (guessesLeft === 0) {
+                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}`;
+                        guessInput.disabled = true;
+                    }
+                }
+            } else { // Whole Word Mode
+                guessInput.value = '';
+                if (guessedLetters.has(guess)) {
+                    alert('You already guessed that word!');
+                    return;
+                }
+                guessedLetters.add(guess);
+
+                if (guess === selectedWord) {
+                    hiddenWord = selectedWord;
+                    document.getElementById('word-display').textContent = hiddenWord;
                     document.getElementById('message').textContent = 'You win!';
-                    document.getElementById('guess-input').disabled = true;
-                }
-            } else {
-                guessesLeft--;
-                document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
-                document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
+                    guessInput.disabled = true;
+                } else {
+                    guessesLeft--;
+                    document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
+                    document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
 
-                if (guessesLeft === 0) {
-                    document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}`;
-                    document.getElementById('guess-input').disabled = true;
+                    if (guessesLeft === 0) {
+                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}`;
+                        guessInput.disabled = true;
+                    }
                 }
             }
         }
