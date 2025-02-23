@@ -26,7 +26,7 @@
             color: #7f8c8d;
             margin-bottom: 20px;
         }
-        #controls, #game, #scoreboard, #mode-selection, #final-score {
+        .container {
             margin: 20px 0;
             width: 100%;
             max-width: 600px;
@@ -35,18 +35,12 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
-        }
-        #controls, #mode-selection, #final-score, #game, #scoreboard {
-            display: none;
-        }
-        #controls.active, #mode-selection.active, #final-score.active {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         textarea {
             width: 100%;
-            max-width: 100%;
             height: 100px;
             margin: 10px 0;
             padding: 10px;
@@ -54,17 +48,14 @@
             border-radius: 5px;
             resize: none;
             font-size: 1em;
-            box-sizing: border-box;
         }
-        #word-list-select, select {
+        select {
             width: 100%;
-            max-width: 100%;
             padding: 8px;
             margin: 10px 0;
             border: 1px solid #bdc3c7;
             border-radius: 5px;
             font-size: 1em;
-            box-sizing: border-box;
         }
         button {
             padding: 10px 20px;
@@ -75,8 +66,6 @@
             color: #fff;
             cursor: pointer;
             font-size: 1em;
-            transition: background 0.3s;
-            width: auto;
             min-width: 120px;
         }
         button:hover {
@@ -96,12 +85,11 @@
             border: 1px solid #bdc3c7;
             border-radius: 5px;
             margin: 10px 0;
-            box-sizing: border-box;
         }
         #guess-input.whole-word {
             width: 150px;
         }
-        #game-container {
+        .game-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -118,7 +106,7 @@
             color: #e74c3c;
             margin-top: 10px;
         }
-        #scoreboard {
+        .scoreboard {
             flex-direction: column;
             justify-content: space-between;
             gap: 10px;
@@ -145,7 +133,7 @@
             padding: 5px;
             border-radius: 3px;
         }
-        #guess-list li {
+        .guess-list li {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -165,16 +153,16 @@
         .clue-box.white {
             background: #fff;
         }
-        #final-score h3 {
+        .final-score h3 {
             color: #2c3e50;
             font-size: clamp(1.2em, 4vw, 1.5em);
         }
-        #final-score-display {
+        .final-score-display {
             font-size: clamp(1.2em, 4vw, 1.5em);
             color: #27ae60;
             margin: 20px 0;
         }
-        #mode-options {
+        .mode-options {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
@@ -193,61 +181,37 @@
                 flex-direction: row;
                 align-items: flex-start;
             }
-            #game.active {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
+            .game {
                 flex: 2;
                 order: 2;
             }
-            #scoreboard.active {
-                display: flex;
-                flex-direction: column;
+            .scoreboard {
                 flex: 1;
                 order: 1;
                 max-width: 300px;
             }
-            #game-container {
+            .game-container {
                 flex-direction: row;
                 flex-wrap: wrap;
                 align-items: center;
             }
             #main-container.finish-screen {
                 flex-direction: row;
-                align-items: flex-start;
             }
-            #main-container.finish-screen #scoreboard.active {
-                display: flex;
-                flex-direction: column;
+            #main-container.finish-screen .scoreboard {
                 flex: 1;
                 order: 1;
                 max-width: 300px;
             }
-            #main-container.finish-screen #final-score.active {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
+            #main-container.finish-screen .final-score {
                 flex: 2;
                 order: 2;
             }
-            #main-container.finish-screen #game {
+            #main-container.finish-screen .game {
                 display: none;
             }
         }
         @media (max-width: 767px) {
-            #game.active {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-            #scoreboard.active {
-                display: flex;
-                flex-direction: column;
-            }
-            #game-container {
-                flex-direction: column;
-                align-items: center;
-            }
             button {
                 width: 100%;
                 min-width: unset;
@@ -256,428 +220,199 @@
                 width: 100%;
                 max-width: 150px;
             }
-            #main-container.finish-screen #scoreboard.active {
-                display: flex;
-                flex-direction: column;
-            }
-            #main-container.finish-screen #final-score.active {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-            #main-container.finish-screen #game {
-                display: none;
-            }
         }
     </style>
 </head>
 <body>
-    <h1>Hangman Game</h1>
-    <p id="version">Version 1.19</p>
+    <div id="root"></div>
 
-    <div id="controls" class="active">
-        <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
-        <select id="word-list-select">
-            <option value="">Select a previous word list</option>
-        </select>
-        <br>
-        <button onclick="submitWords()">Submit Words</button>
-    </div>
+    <!-- Load React and Babel via CDN -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <div id="mode-selection">
-        <h3>Choose Game Mode</h3>
-        <div id="mode-options">
-            <button onclick="startGame('char')">One Character Mode</button>
-            <button onclick="startGame('word')">Whole Word Mode</button>
-            <button onclick="startGame('mastermind')">MasterMind Mode</button>
-        </div>
-        <div id="mode-options">
-            <select id="voice-select">
-                <option value="">Select a voice</option>
-            </select>
-        </div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    <div id="main-container">
-        <div id="game">
-            <div id="word-display"></div>
-            <div id="char-count"></div>
-            <div id="game-container">
-                <canvas id="hangman-canvas" width="200" height="200"></canvas>
-                <div class="list-container">
-                    <h3>Guess Attempts</h3>
-                    <ul id="guess-list"></ul>
-                </div>
-            </div>
-            <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
-            <button onclick="makeGuess()">Guess</button>
-            <button onclick="speakWord()">Read Word</button>
-            <div id="message"></div>
-        </div>
+        // App Component
+        const App = () => {
+            const [gameState, setGameState] = useState('controls');
+            const [wordsList, setWordsList] = useState([]);
+            const [remainingWords, setRemainingWords] = useState([]);
+            const [correctWords, setCorrectWords] = useState([]);
+            const [failedWords, setFailedWords] = useState([]);
+            const [score, setScore] = useState(0);
+            const [totalPoints, setTotalPoints] = useState(0);
+            const [lastUsedWords, setLastUsedWords] = useState('');
+            const [gameMode, setGameMode] = useState('char');
+            const [voices, setVoices] = useState([]);
+            const [selectedVoice, setSelectedVoice] = useState(null);
 
-        <div id="scoreboard">
-            <div class="list-container">
-                <h3>Correctly Guessed</h3>
-                <ul id="correct-list"></ul>
-            </div>
-            <div class="list-container">
-                <h3>Failed to Guess</h3>
-                <ul id="failed-list"></ul>
-            </div>
-            <div class="list-container">
-                <h3>Score</h3>
-                <p id="score">0 / 0</p>
-                <p id="remaining">Remaining Words: 0</p>
-            </div>
-        </div>
+            useEffect(() => {
+                loadVoices();
+            }, []);
 
-        <div id="final-score">
-            <h3>Game Over - Final Score</h3>
-            <p id="final-score-display">0 / 0</p>
-            <button onclick="restartGame()">Start Over</button>
-        </div>
-    </div>
-
-    <script>
-        let selectedWord = '';
-        let hiddenWord = '';
-        let guessesLeft = 6;
-        let guessedLetters = new Set();
-        let gameMode = 'char';
-        let wordsList = [];
-        let remainingWords = [];
-        let correctWords = [];
-        let failedWords = [];
-        let totalPoints = 0;
-        let score = 0;
-        let lastUsedWords = '';
-        let guessAttempts = [];
-        let selectedVoice = null;
-        let voices = [];
-
-        const canvas = document.getElementById('hangman-canvas');
-        const ctx = canvas ? canvas.getContext('2d') : null;
-
-        function drawHangman() {
-            if (!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = '#2c3e50';
-            ctx.lineWidth = 2;
-
-            ctx.beginPath();
-            ctx.moveTo(50, 180); ctx.lineTo(150, 180); // Base
-            ctx.moveTo(100, 180); ctx.lineTo(100, 20); // Pole
-            ctx.moveTo(100, 20); ctx.lineTo(140, 20); // Top
-            ctx.moveTo(140, 20); ctx.lineTo(140, 40); // Rope
-            ctx.stroke();
-
-            if (guessesLeft < 6) { ctx.beginPath(); ctx.arc(140, 60, 20, 0, Math.PI * 2); ctx.stroke(); }
-            if (guessesLeft < 5) { ctx.beginPath(); ctx.moveTo(140, 80); ctx.lineTo(140, 120); ctx.stroke(); }
-            if (guessesLeft < 4) { ctx.beginPath(); ctx.moveTo(140, 90); ctx.lineTo(120, 110); ctx.stroke(); }
-            if (guessesLeft < 3) { ctx.beginPath(); ctx.moveTo(140, 90); ctx.lineTo(160, 110); ctx.stroke(); }
-            if (guessesLeft < 2) { ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(120, 150); ctx.stroke(); }
-            if (guessesLeft < 1) { ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(160, 150); ctx.stroke(); }
-        }
-
-        function loadWordLists() {
-            const wordLists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
-            const select = document.getElementById('word-list-select');
-            select.innerHTML = '<option value="">Select a previous word list</option>';
-            wordLists.forEach((list) => {
-                const option = document.createElement('option');
-                option.value = list;
-                option.textContent = list.substring(0, 50) + (list.length > 50 ? '...' : '');
-                select.appendChild(option);
-            });
-            select.onchange = () => {
-                if (select.value) {
-                    document.getElementById('word-input').value = select.value;
+            const loadVoices = () => {
+                const availableVoices = window.speechSynthesis.getVoices();
+                if (availableVoices.length === 0) {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        const voicesList = window.speechSynthesis.getVoices();
+                        setVoices(voicesList);
+                        if (voicesList.length > 0) setSelectedVoice(voicesList[0]);
+                    };
+                } else {
+                    setVoices(availableVoices);
+                    setSelectedVoice(availableVoices[0]);
                 }
             };
-        }
 
-        function saveWordList(input) {
-            let wordLists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
-            if (!wordLists.includes(input)) {
-                wordLists.unshift(input);
-                if (wordLists.length > 50) wordLists.pop();
-                localStorage.setItem('hangmanWordLists', JSON.stringify(wordLists));
-            }
-            loadWordLists();
-        }
-
-        function submitWords() {
-            const input = document.getElementById('word-input').value.trim();
-            if (!input) {
-                alert('Please enter some words first!');
-                return;
-            }
-
-            wordsList = input.split(/[\s,]+/).filter(word => word.length > 0);
-            if (wordsList.length === 0) {
-                alert('Please enter valid words!');
-                return;
-            }
-
-            lastUsedWords = input;
-            saveWordList(input);
-            remainingWords = [...wordsList];
-            totalPoints = wordsList.length;
-            score = 0;
-            correctWords = [];
-            failedWords = [];
-            updateScore();
-
-            document.getElementById('controls').classList.remove('active');
-            document.getElementById('mode-selection').classList.add('active');
-            populateVoiceSelect();
-        }
-
-        function startGame(mode) {
-            gameMode = mode;
-            const voiceSelect = document.getElementById('voice-select');
-            selectedVoice = voices.find(v => v.name === voiceSelect.value) || voices[0];
-            document.getElementById('mode-selection').classList.remove('active');
-            document.getElementById('game').classList.add('active');
-            document.getElementById('scoreboard').classList.add('active');
-            document.getElementById('main-container').classList.remove('finish-screen');
-            startNextWord();
-        }
-
-        function startNextWord() {
-            if (remainingWords.length === 0) {
-                showFinalScore();
-                return;
-            }
-
-            selectedWord = remainingWords[Math.floor(Math.random() * remainingWords.length)].toLowerCase();
-            remainingWords = remainingWords.filter(word => word.toLowerCase() !== selectedWord);
-            hiddenWord = '-'.repeat(selectedWord.length);
-            guessesLeft = 6;
-            guessedLetters.clear();
-            guessAttempts = [];
-            updateGuessList();
-
-            document.getElementById('word-display').textContent = hiddenWord;
-            document.getElementById('char-count').textContent = `Total characters: ${selectedWord.length}`;
-            drawHangman();
-            document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
-
-            const guessInput = document.getElementById('guess-input');
-            guessInput.value = '';
-            guessInput.disabled = false;
-            if (gameMode === 'char') {
-                guessInput.classList.remove('whole-word');
-                guessInput.setAttribute('maxlength', '1');
-                guessInput.placeholder = 'Guess a letter';
-            } else {
-                guessInput.classList.add('whole-word');
-                guessInput.removeAttribute('maxlength');
-                guessInput.placeholder = gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word';
-            }
-            guessInput.focus();
-            updateScore();
-            speakWordWithVoice(selectedWord);
-        }
-
-        function getMasterMindClue(guess) {
-            let clue = [];
-            const target = selectedWord.split('');
-            const guessed = guess.split('');
-            const used = new Set();
-
-            for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
-                if (guessed[i] === target[i]) {
-                    clue.push('black');
-                    used.add(i);
-                    target[i] = null;
-                }
-            }
-
-            for (let i = 0; i < guessed.length; i++) {
-                if (!clue[i] && target.includes(guessed[i])) {
-                    const pos = target.indexOf(guessed[i]);
-                    if (!used.has(pos)) {
-                        clue[i] = 'white';
-                        used.add(pos);
-                        target[pos] = null;
-                    }
-                }
-            }
-
-            for (let i = clue.length; i < selectedWord.length; i++) {
-                clue[i] = '';
-            }
-            return clue;
-        }
-
-        function makeGuess() {
-            const guessInput = document.getElementById('guess-input');
-            const guess = guessInput.value.toLowerCase().trim();
-
-            if (!guess) {
-                speakWord();
-                return;
-            }
-
-            if (gameMode === 'char') {
-                if (guess.length !== 1 || !/[a-z]/.test(guess)) {
-                    alert('Please enter a single letter!');
+            const submitWords = (input) => {
+                const words = input.split(/[\s,]+/).filter(word => word.length > 0);
+                if (words.length === 0) {
+                    alert('Please enter valid words!');
                     return;
                 }
-                if (guessedLetters.has(guess)) {
-                    alert('You already guessed that letter!');
+                setWordsList(words);
+                setRemainingWords(words);
+                setCorrectWords([]);
+                setFailedWords([]);
+                setScore(0);
+                setTotalPoints(words.length);
+                setLastUsedWords(input);
+                setGameState('mode');
+            };
+
+            const startGame = (mode) => {
+                setGameMode(mode);
+                setGameState('playing');
+            };
+
+            const endGame = () => {
+                setGameState('finished');
+            };
+
+            const restartGame = () => {
+                setGameState('controls');
+                setWordsList([]);
+                setRemainingWords([]);
+                setCorrectWords([]);
+                setFailedWords([]);
+                setScore(0);
+                setTotalPoints(0);
+            };
+
+            return (
+                <div>
+                    <h1>Hangman Game</h1>
+                    <p id="version">Version 1.20</p>
+                    <div id="main-container" className={gameState === 'finished' ? 'finish-screen' : ''}>
+                        {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
+                        {gameState === 'mode' && (
+                            <ModeSelection
+                                onStart={startGame}
+                                voices={voices}
+                                selectedVoice={selectedVoice}
+                                setSelectedVoice={setSelectedVoice}
+                            />
+                        )}
+                        {gameState === 'playing' && (
+                            <>
+                                <Game
+                                    wordsList={remainingWords}
+                                    setRemainingWords={setRemainingWords}
+                                    correctWords={correctWords}
+                                    setCorrectWords={setCorrectWords}
+                                    failedWords={failedWords}
+                                    setFailedWords={setFailedWords}
+                                    score={score}
+                                    setScore={setScore}
+                                    totalPoints={totalPoints}
+                                    gameMode={gameMode}
+                                    onEnd={endGame}
+                                    selectedVoice={selectedVoice}
+                                />
+                                <Scoreboard
+                                    correctWords={correctWords}
+                                    failedWords={failedWords}
+                                    score={score}
+                                    totalPoints={totalPoints}
+                                    remainingWords={remainingWords}
+                                />
+                            </>
+                        )}
+                        {gameState === 'finished' && (
+                            <>
+                                <FinalScore score={score} totalPoints={totalPoints} onRestart={restartGame} />
+                                <Scoreboard
+                                    correctWords={correctWords}
+                                    failedWords={failedWords}
+                                    score={score}
+                                    totalPoints={totalPoints}
+                                    remainingWords={remainingWords}
+                                />
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // Controls Component
+        const Controls = ({ onSubmit, lastUsedWords }) => {
+            const [input, setInput] = useState(lastUsedWords);
+            const [wordLists, setWordLists] = useState([]);
+
+            useEffect(() => {
+                loadWordLists();
+            }, []);
+
+            const loadWordLists = () => {
+                const lists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
+                setWordLists(lists);
+            };
+
+            const saveWordList = (value) => {
+                let lists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
+                if (!lists.includes(value)) {
+                    lists.unshift(value);
+                    if (lists.length > 50) lists.pop();
+                    localStorage.setItem('hangmanWordLists', JSON.stringify(lists));
+                    setWordLists(lists);
+                }
+            };
+
+            const handleSubmit = () => {
+                if (!input.trim()) {
+                    alert('Please enter some words first!');
                     return;
                 }
-                guessedLetters.add(guess);
-                guessAttempts.unshift({ guess, clue: null });
-                guessInput.value = '';
-                updateGuessList();
+                saveWordList(input.trim());
+                onSubmit(input.trim());
+            };
 
-                if (selectedWord.includes(guess)) {
-                    let newHiddenWord = '';
-                    for (let i = 0; i < selectedWord.length; i++) {
-                        newHiddenWord += (selectedWord[i] === guess) ? guess : hiddenWord[i];
-                    }
-                    hiddenWord = newHiddenWord;
-                    document.getElementById('word-display').textContent = hiddenWord;
+            return (
+                <div className="container">
+                    <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Enter words separated by commas or spaces"
+                    />
+                    <select onChange={(e) => setInput(e.target.value)}>
+                        <option value="">Select a previous word list</option>
+                        {wordLists.map((list, index) => (
+                            <option key={index} value={list}>
+                                {list.substring(0, 50) + (list.length > 50 ? '...' : '')}
+                            </option>
+                        ))}
+                    </select>
+                    <button onClick={handleSubmit}>Submit Words</button>
+                </div>
+            );
+        };
 
-                    if (!hiddenWord.includes('-')) {
-                        correctWords.push(selectedWord);
-                        score++;
-                        updateLists();
-                        updateScore();
-                        document.getElementById('message').textContent = 'You win! Next word...';
-                        setTimeout(startNextWord, 1000);
-                    }
-                } else {
-                    guessesLeft--;
-                    drawHangman();
-                    document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
-
-                    if (guessesLeft === 0) {
-                        failedWords.push(selectedWord);
-                        updateLists();
-                        updateScore();
-                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}. Next word...`;
-                        setTimeout(startNextWord, 1000);
-                    }
-                }
-            } else { // Whole Word Mode or MasterMind Mode
-                if (guessedLetters.has(guess)) {
-                    alert('You already guessed that word!');
-                    return;
-                }
-                guessedLetters.add(guess);
-                const clue = gameMode === 'mastermind' ? getMasterMindClue(guess) : null;
-                guessAttempts.unshift({ guess, clue });
-                guessInput.value = '';
-                updateGuessList();
-
-                if (guess === selectedWord) {
-                    hiddenWord = selectedWord;
-                    document.getElementById('word-display').textContent = hiddenWord;
-                    correctWords.push(selectedWord);
-                    score++;
-                    updateLists();
-                    updateScore();
-                    document.getElementById('message').textContent = 'You win! Next word...';
-                    setTimeout(startNextWord, 1000);
-                } else {
-                    guessesLeft--;
-                    drawHangman();
-                    document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
-
-                    if (guessesLeft === 0) {
-                        failedWords.push(selectedWord);
-                        updateLists();
-                        updateScore();
-                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}. Next word...`;
-                        setTimeout(startNextWord, 1000);
-                    }
-                }
-            }
-            guessInput.focus();
-        }
-
-        function updateGuessList() {
-            const guessList = document.getElementById('guess-list');
-            guessList.innerHTML = guessAttempts.map(({ guess, clue }) => {
-                let clueHtml = '';
-                if (clue) {
-                    clueHtml = '<span class="clue">' + 
-                        clue.map(c => `<span class="clue-box ${c}"></span>`).join('') + 
-                        '</span>';
-                }
-                return `<li>${guess} ${clueHtml}</li>`;
-            }).join('');
-        }
-
-        function updateLists() {
-            const correctList = document.getElementById('correct-list');
-            const failedList = document.getElementById('failed-list');
-            correctList.innerHTML = correctWords.map(word => `<li>${word}</li>`).join('');
-            failedList.innerHTML = failedWords.map(word => `<li>${word}</li>`).join('');
-        }
-
-        function updateScore() {
-            document.getElementById('score').textContent = `${score} / ${totalPoints}`;
-            document.getElementById('remaining').textContent = `Remaining Words: ${remainingWords.length}`;
-        }
-
-        function showFinalScore() {
-            document.getElementById('game').classList.remove('active');
-            document.getElementById('scoreboard').classList.remove('active');
-            document.getElementById('final-score').classList.add('active');
-            document.getElementById('scoreboard').classList.add('active');
-            document.getElementById('main-container').classList.add('finish-screen');
-        }
-
-        function restartGame() {
-            document.getElementById('final-score').classList.remove('active');
-            document.getElementById('scoreboard').classList.remove('active');
-            document.getElementById('main-container').classList.remove('finish-screen');
-            document.getElementById('controls').classList.add('active');
-            document.getElementById('word-input').value = lastUsedWords;
-            wordsList = [];
-            remainingWords = [];
-            correctWords = [];
-            failedWords = [];
-            guessAttempts = [];
-            score = 0;
-            totalPoints = 0;
-            updateLists();
-            updateScore();
-            updateGuessList();
-        }
-
-        function speakWord() {
-            if (!selectedWord) {
-                alert('Start a game first!');
-                return;
-            }
-            speakWordWithVoice(selectedWord);
-        }
-
-        function speakWordWithVoice(word) {
-            const speech = new SpeechSynthesisUtterance(word);
-            if (selectedVoice) {
-                speech.voice = selectedVoice;
-                speech.lang = selectedVoice.lang;
-            }
-            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-            speech.rate = isSafari ? 0.9 : 1.0;
-            speech.pitch = isSafari && selectedVoice?.lang === 'en-GB' ? 1.1 : 1.0;
-            window.speechSynthesis.speak(speech);
-        }
-
-        function populateVoiceSelect() {
-            const voiceSelect = document.getElementById('voice-select');
-            voiceSelect.innerHTML = '<option value="">Select a voice</option>';
-
-            // Preferred voices for British (en-GB) and American (en-US) accents only
+        // ModeSelection Component
+        const ModeSelection = ({ onStart, voices, selectedVoice, setSelectedVoice }) => {
             const preferredVoices = [
-                // British (en-GB)
                 { name: 'Kate', lang: 'en-GB' },
                 { name: 'Serena', lang: 'en-GB' },
                 { name: 'Daniel', lang: 'en-GB' },
@@ -685,63 +420,322 @@
                 { name: 'Google UK English Male', lang: 'en-GB' },
                 { name: 'Microsoft Hazel Desktop', lang: 'en-GB' },
                 { name: 'Microsoft George Desktop', lang: 'en-GB' },
-                // American (en-US)
                 { name: 'Samantha', lang: 'en-US' },
                 { name: 'Alex', lang: 'en-US' },
                 { name: 'Google US English', lang: 'en-US' },
                 { name: 'Google US English Male', lang: 'en-US' },
                 { name: 'Microsoft Zira Desktop', lang: 'en-US' },
-                { name: 'Microsoft David Desktop', lang: 'en-US' }
+                { name: 'Microsoft David Desktop', lang: 'en-US' },
             ];
 
-            // Filter available voices to match preferred list (en-GB and en-US only)
-            const availableVoices = voices.filter(voice => 
+            const availableVoices = voices.filter(voice =>
                 preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
-            );
-
-            // Sort voices to maintain the order from preferredVoices
-            availableVoices.sort((a, b) => {
+            ).sort((a, b) => {
                 const aIndex = preferredVoices.findIndex(p => p.name === a.name && p.lang === a.lang);
                 const bIndex = preferredVoices.findIndex(p => p.name === b.name && p.lang === b.lang);
                 return aIndex - bIndex;
             });
 
-            // Populate dropdown with available en-GB and en-US voices
-            availableVoices.forEach(voice => {
-                const option = document.createElement('option');
-                option.value = voice.name;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                voiceSelect.appendChild(option);
-            });
+            return (
+                <div className="container">
+                    <h3>Choose Game Mode</h3>
+                    <div className="mode-options">
+                        <button onClick={() => onStart('char')}>One Character Mode</button>
+                        <button onClick={() => onStart('word')}>Whole Word Mode</button>
+                        <button onClick={() => onStart('mastermind')}>MasterMind Mode</button>
+                    </div>
+                    <div className="mode-options">
+                        <select
+                            value={selectedVoice?.name || ''}
+                            onChange={(e) => setSelectedVoice(availableVoices.find(v => v.name === e.target.value))}
+                        >
+                            <option value="">Select a voice</option>
+                            {availableVoices.map((voice) => (
+                                <option key={voice.name} value={voice.name}>
+                                    {`${voice.name} (${voice.lang})`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            );
+        };
 
-            // Select first available voice by default
-            if (availableVoices.length > 0) {
-                voiceSelect.value = availableVoices[0].name;
-            }
-        }
+        // Game Component
+        const Game = ({
+            wordsList,
+            setRemainingWords,
+            correctWords,
+            setCorrectWords,
+            failedWords,
+            setFailedWords,
+            score,
+            setScore,
+            totalPoints,
+            gameMode,
+            onEnd,
+            selectedVoice,
+        }) => {
+            const [selectedWord, setSelectedWord] = useState('');
+            const [hiddenWord, setHiddenWord] = useState('');
+            const [guessesLeft, setGuessesLeft] = useState(6);
+            const [guessedLetters, setGuessedLetters] = useState(new Set());
+            const [guessAttempts, setGuessAttempts] = useState([]);
+            const [guessInput, setGuessInput] = useState('');
+            const [message, setMessage] = useState('');
+            const canvasRef = useRef(null);
 
-        function loadVoices() {
-            voices = window.speechSynthesis.getVoices();
-            if (voices.length === 0) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    voices = window.speechSynthesis.getVoices();
-                    if (voices.length > 0) {
-                        populateVoiceSelect();
-                        window.speechSynthesis.onvoiceschanged = null;
+            useEffect(() => {
+                startNextWord();
+            }, []);
+
+            useEffect(() => {
+                drawHangman();
+            }, [guessesLeft]);
+
+            const drawHangman = () => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                ctx.moveTo(50, 180); ctx.lineTo(150, 180);
+                ctx.moveTo(100, 180); ctx.lineTo(100, 20);
+                ctx.moveTo(100, 20); ctx.lineTo(140, 20);
+                ctx.moveTo(140, 20); ctx.lineTo(140, 40);
+                ctx.stroke();
+
+                if (guessesLeft < 6) { ctx.beginPath(); ctx.arc(140, 60, 20, 0, Math.PI * 2); ctx.stroke(); }
+                if (guessesLeft < 5) { ctx.beginPath(); ctx.moveTo(140, 80); ctx.lineTo(140, 120); ctx.stroke(); }
+                if (guessesLeft < 4) { ctx.beginPath(); ctx.moveTo(140, 90); ctx.lineTo(120, 110); ctx.stroke(); }
+                if (guessesLeft < 3) { ctx.beginPath(); ctx.moveTo(140, 90); ctx.lineTo(160, 110); ctx.stroke(); }
+                if (guessesLeft < 2) { ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(120, 150); ctx.stroke(); }
+                if (guessesLeft < 1) { ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(160, 150); ctx.stroke(); }
+            };
+
+            const startNextWord = () => {
+                if (wordsList.length === 0) {
+                    onEnd();
+                    return;
+                }
+                const word = wordsList[Math.floor(Math.random() * wordsList.length)].toLowerCase();
+                setSelectedWord(word);
+                setRemainingWords(wordsList.filter(w => w.toLowerCase() !== word));
+                setHiddenWord('-'.repeat(word.length));
+                setGuessesLeft(6);
+                setGuessedLetters(new Set());
+                setGuessAttempts([]);
+                setMessage(`Guesses left: 6`);
+                setGuessInput('');
+                speakWordWithVoice(word);
+            };
+
+            const getMasterMindClue = (guess) => {
+                let clue = [];
+                const target = selectedWord.split('');
+                const guessed = guess.split('');
+                const used = new Set();
+
+                for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
+                    if (guessed[i] === target[i]) {
+                        clue.push('black');
+                        used.add(i);
+                        target[i] = null;
                     }
-                };
-            } else {
-                populateVoiceSelect();
-            }
-        }
+                }
 
-        document.getElementById('guess-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') makeGuess();
-        });
+                for (let i = 0; i < guessed.length; i++) {
+                    if (!clue[i] && target.includes(guessed[i])) {
+                        const pos = target.indexOf(guessed[i]);
+                        if (!used.has(pos)) {
+                            clue[i] = 'white';
+                            used.add(pos);
+                            target[pos] = null;
+                        }
+                    }
+                }
 
-        loadWordLists();
-        loadVoices();
-        drawHangman();
+                for (let i = clue.length; i < selectedWord.length; i++) {
+                    clue[i] = '';
+                }
+                return clue;
+            };
+
+            const makeGuess = () => {
+                const guess = guessInput.toLowerCase().trim();
+                if (!guess) {
+                    speakWord();
+                    return;
+                }
+
+                if (gameMode === 'char') {
+                    if (guess.length !== 1 || !/[a-z]/.test(guess)) {
+                        alert('Please enter a single letter!');
+                        return;
+                    }
+                    if (guessedLetters.has(guess)) {
+                        alert('You already guessed that letter!');
+                        return;
+                    }
+                    const newGuessedLetters = new Set(guessedLetters);
+                    newGuessedLetters.add(guess);
+                    setGuessedLetters(newGuessedLetters);
+                    setGuessAttempts([{ guess, clue: null }, ...guessAttempts]);
+                    setGuessInput('');
+
+                    if (selectedWord.includes(guess)) {
+                        const newHiddenWord = selectedWord.split('').map((char, i) =>
+                            char === guess ? guess : hiddenWord[i]
+                        ).join('');
+                        setHiddenWord(newHiddenWord);
+
+                        if (!newHiddenWord.includes('-')) {
+                            setCorrectWords([...correctWords, selectedWord]);
+                            setScore(score + 1);
+                            setMessage('You win! Next word...');
+                            setTimeout(startNextWord, 1000);
+                        }
+                    } else {
+                        setGuessesLeft(guessesLeft - 1);
+                        setMessage(`Guesses left: ${guessesLeft - 1}`);
+                        if (guessesLeft - 1 === 0) {
+                            setFailedWords([...failedWords, selectedWord]);
+                            setMessage(`Game Over! The word was: ${selectedWord}. Next word...`);
+                            setTimeout(startNextWord, 1000);
+                        }
+                    }
+                } else {
+                    if (guessedLetters.has(guess)) {
+                        alert('You already guessed that word!');
+                        return;
+                    }
+                    const newGuessedLetters = new Set(guessedLetters);
+                    newGuessedLetters.add(guess);
+                    setGuessedLetters(newGuessedLetters);
+                    const clue = gameMode === 'mastermind' ? getMasterMindClue(guess) : null;
+                    setGuessAttempts([{ guess, clue }, ...guessAttempts]);
+                    setGuessInput('');
+
+                    if (guess === selectedWord) {
+                        setHiddenWord(selectedWord);
+                        setCorrectWords([...correctWords, selectedWord]);
+                        setScore(score + 1);
+                        setMessage('You win! Next word...');
+                        setTimeout(startNextWord, 1000);
+                    } else {
+                        setGuessesLeft(guessesLeft - 1);
+                        setMessage(`Guesses left: ${guessesLeft - 1}`);
+                        if (guessesLeft - 1 === 0) {
+                            setFailedWords([...failedWords, selectedWord]);
+                            setMessage(`Game Over! The word was: ${selectedWord}. Next word...`);
+                            setTimeout(startNextWord, 1000);
+                        }
+                    }
+                }
+            };
+
+            const speakWord = () => {
+                if (!selectedWord) {
+                    alert('Start a game first!');
+                    return;
+                }
+                speakWordWithVoice(selectedWord);
+            };
+
+            const speakWordWithVoice = (word) => {
+                const speech = new SpeechSynthesisUtterance(word);
+                if (selectedVoice) {
+                    speech.voice = selectedVoice;
+                    speech.lang = selectedVoice.lang;
+                }
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                speech.rate = isSafari ? 0.9 : 1.0;
+                speech.pitch = isSafari && selectedVoice?.lang === 'en-GB' ? 1.1 : 1.0;
+                window.speechSynthesis.speak(speech);
+            };
+
+            return (
+                <div className="container game">
+                    <div id="word-display">{hiddenWord}</div>
+                    <div>Total characters: {selectedWord.length}</div>
+                    <div className="game-container">
+                        <canvas ref={canvasRef} id="hangman-canvas" width="200" height="200"></canvas>
+                        <div className="list-container">
+                            <h3>Guess Attempts</h3>
+                            <ul className="guess-list">
+                                {guessAttempts.map(({ guess, clue }, index) => (
+                                    <li key={index}>
+                                        {guess}
+                                        {clue && (
+                                            <span className="clue">
+                                                {clue.map((c, i) => (
+                                                    <span key={i} className={`clue-box ${c}`}></span>
+                                                ))}
+                                            </span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                    <input
+                        id="guess-input"
+                        type="text"
+                        value={guessInput}
+                        onChange={(e) => setGuessInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && makeGuess()}
+                        className={gameMode !== 'char' ? 'whole-word' : ''}
+                        placeholder={gameMode === 'char' ? 'Guess a letter' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
+                        maxLength={gameMode === 'char' ? 1 : undefined}
+                    />
+                    <button onClick={makeGuess}>Guess</button>
+                    <button onClick={speakWord}>Read Word</button>
+                    <div id="message">{message}</div>
+                </div>
+            );
+        };
+
+        // Scoreboard Component
+        const Scoreboard = ({ correctWords, failedWords, score, totalPoints, remainingWords }) => {
+            return (
+                <div className="container scoreboard">
+                    <div className="list-container">
+                        <h3>Correctly Guessed</h3>
+                        <ul>
+                            {correctWords.map((word, index) => <li key={index}>{word}</li>)}
+                        </ul>
+                    </div>
+                    <div className="list-container">
+                        <h3>Failed to Guess</h3>
+                        <ul>
+                            {failedWords.map((word, index) => <li key={index}>{word}</li>)}
+                        </ul>
+                    </div>
+                    <div className="list-container">
+                        <h3>Score</h3>
+                        <p>{`${score} / ${totalPoints}`}</p>
+                        <p>Remaining Words: {remainingWords.length}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // FinalScore Component
+        const FinalScore = ({ score, totalPoints, onRestart }) => {
+            return (
+                <div className="container final-score">
+                    <h3>Game Over - Final Score</h3>
+                    <p className="final-score-display">{`${score} / ${totalPoints}`}</p>
+                    <button onClick={onRestart}>Start Over</button>
+                </div>
+            );
+        };
+
+        // Render the App
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
