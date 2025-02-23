@@ -15,8 +15,12 @@
             margin: 20px;
             letter-spacing: 5px;
         }
-        #controls, #game {
+        #controls, #game, #scoreboard, #mode-selection, #final-score {
             margin: 20px;
+            display: none;
+        }
+        #controls.active, #game.active, #scoreboard.active, #mode-selection.active, #final-score.active {
+            display: block;
         }
         textarea {
             width: 300px;
@@ -44,28 +48,71 @@
             font-size: 14px;
             color: #666;
         }
+        #scoreboard {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .list-container {
+            width: 200px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.3</p>
-    
-    <div id="controls">
+    <p id="version">Version 1.5</p>
+
+    <!-- Step 1: Ask for Words -->
+    <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
         <br>
-        <button onclick="startGame('char')">Start (One Character Mode)</button>
-        <button onclick="startGame('word')">Start (Whole Word Mode)</button>
-        <button onclick="startOver()">Start Over</button>
-        <button onclick="speakWord()">Read Word</button>
+        <button onclick="submitWords()">Submit Words</button>
     </div>
 
+    <!-- Step 2: Choose Game Mode -->
+    <div id="mode-selection">
+        <h3>Choose Game Mode</h3>
+        <button onclick="startGame('char')">One Character Mode</button>
+        <button onclick="startGame('word')">Whole Word Mode</button>
+    </div>
+
+    <!-- Step 3: Game Play -->
     <div id="game">
         <div id="word-display"></div>
         <div id="char-count"></div>
         <div id="hangman"></div>
         <input type="text" id="guess-input" maxlength="1" placeholder="Guess">
         <button onclick="makeGuess()">Guess</button>
+        <button onclick="speakWord()">Read Word</button>
         <div id="message"></div>
+    </div>
+
+    <!-- Scoreboard (Visible During Game) -->
+    <div id="scoreboard">
+        <div class="list-container">
+            <h3>Correctly Guessed</h3>
+            <ul id="correct-list"></ul>
+        </div>
+        <div class="list-container">
+            <h3>Failed to Guess</h3>
+            <ul id="failed-list"></ul>
+        </div>
+        <div class="list-container">
+            <h3>Score</h3>
+            <p id="score">0 / 0</p>
+            <p id="remaining">Remaining Words: 0</p>
+        </div>
+    </div>
+
+    <!-- Step 4: Final Score -->
+    <div id="final-score">
+        <h3>Game Over - Final Score</h3>
+        <p id="final-score-display">0 / 0</p>
+        <button onclick="restartGame()">Start Over</button>
     </div>
 
     <script>
@@ -73,7 +120,14 @@
         let hiddenWord = '';
         let guessesLeft = 6;
         let guessedLetters = new Set();
-        let gameMode = 'char'; // 'char' for One Character Mode, 'word' for Whole Word Mode
+        let gameMode = 'char';
+        let wordsList = [];
+        let remainingWords = [];
+        let correctWords = [];
+        let failedWords = [];
+        let totalPoints = 0;
+        let score = 0;
+        let lastUsedWords = '';
 
         const hangmanStages = [
             `
@@ -134,23 +188,47 @@
 =========`
         ];
 
-        function startGame(mode) {
+        function submitWords() {
             const input = document.getElementById('word-input').value.trim();
             if (!input) {
                 alert('Please enter some words first!');
                 return;
             }
 
-            const words = input.split(/[\s,]+/).filter(word => word.length > 0);
-            if (words.length === 0) {
+            wordsList = input.split(/[\s,]+/).filter(word => word.length > 0);
+            if (wordsList.length === 0) {
                 alert('Please enter valid words!');
                 return;
             }
 
-            document.getElementById('word-input').value = '';
-            gameMode = mode;
+            lastUsedWords = input; // Store last used words
+            remainingWords = [...wordsList];
+            totalPoints = wordsList.length;
+            score = 0;
+            correctWords = [];
+            failedWords = [];
+            updateScore();
 
-            selectedWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+            document.getElementById('controls').classList.remove('active');
+            document.getElementById('mode-selection').classList.add('active');
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            document.getElementById('mode-selection').classList.remove('active');
+            document.getElementById('game').classList.add('active');
+            document.getElementById('scoreboard').classList.add('active');
+            startNextWord();
+        }
+
+        function startNextWord() {
+            if (remainingWords.length === 0) {
+                showFinalScore();
+                return;
+            }
+
+            selectedWord = remainingWords[Math.floor(Math.random() * remainingWords.length)].toLowerCase();
+            remainingWords = remainingWords.filter(word => word.toLowerCase() !== selectedWord);
             hiddenWord = '-'.repeat(selectedWord.length);
             guessesLeft = 6;
             guessedLetters.clear();
@@ -173,15 +251,7 @@
                 guessInput.placeholder = 'Guess a letter';
             }
             guessInput.focus();
-        }
-
-        function startOver() {
-            if (!document.getElementById('word-input').value) {
-                alert('Please enter some words to start over!');
-                document.getElementById('word-input').focus();
-                return;
-            }
-            startGame(gameMode); // Restart with the same mode
+            updateScore();
         }
 
         function makeGuess() {
@@ -214,8 +284,12 @@
                     document.getElementById('word-display').textContent = hiddenWord;
 
                     if (!hiddenWord.includes('-')) {
-                        document.getElementById('message').textContent = 'You win!';
-                        guessInput.disabled = true;
+                        correctWords.push(selectedWord);
+                        score++;
+                        updateLists();
+                        updateScore();
+                        document.getElementById('message').textContent = 'You win! Next word...';
+                        setTimeout(startNextWord, 1000); // Brief delay before next word
                     }
                 } else {
                     guessesLeft--;
@@ -223,8 +297,11 @@
                     document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
 
                     if (guessesLeft === 0) {
-                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}`;
-                        guessInput.disabled = true;
+                        failedWords.push(selectedWord);
+                        updateLists();
+                        updateScore();
+                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}. Next word...`;
+                        setTimeout(startNextWord, 1000);
                     }
                 }
             } else { // Whole Word Mode
@@ -238,19 +315,59 @@
                 if (guess === selectedWord) {
                     hiddenWord = selectedWord;
                     document.getElementById('word-display').textContent = hiddenWord;
-                    document.getElementById('message').textContent = 'You win!';
-                    guessInput.disabled = true;
+                    correctWords.push(selectedWord);
+                    score++;
+                    updateLists();
+                    updateScore();
+                    document.getElementById('message').textContent = 'You win! Next word...';
+                    setTimeout(startNextWord, 1000);
                 } else {
                     guessesLeft--;
                     document.getElementById('hangman').textContent = hangmanStages[6 - guessesLeft];
                     document.getElementById('message').textContent = `Guesses left: ${guessesLeft}`;
 
                     if (guessesLeft === 0) {
-                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}`;
-                        guessInput.disabled = true;
+                        failedWords.push(selectedWord);
+                        updateLists();
+                        updateScore();
+                        document.getElementById('message').textContent = `Game Over! The word was: ${selectedWord}. Next word...`;
+                        setTimeout(startNextWord, 1000);
                     }
                 }
             }
+        }
+
+        function updateLists() {
+            const correctList = document.getElementById('correct-list');
+            const failedList = document.getElementById('failed-list');
+            correctList.innerHTML = correctWords.map(word => `<li>${word}</li>`).join('');
+            failedList.innerHTML = failedWords.map(word => `<li>${word}</li>`).join('');
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = `${score} / ${totalPoints}`;
+            document.getElementById('remaining').textContent = `Remaining Words: ${remainingWords.length}`;
+        }
+
+        function showFinalScore() {
+            document.getElementById('game').classList.remove('active');
+            document.getElementById('scoreboard').classList.remove('active');
+            document.getElementById('final-score').classList.add('active');
+            document.getElementById('final-score-display').textContent = `${score} / ${totalPoints}`;
+        }
+
+        function restartGame() {
+            document.getElementById('final-score').classList.remove('active');
+            document.getElementById('controls').classList.add('active');
+            document.getElementById('word-input').value = lastUsedWords; // Reload last used words
+            wordsList = [];
+            remainingWords = [];
+            correctWords = [];
+            failedWords = [];
+            score = 0;
+            totalPoints = 0;
+            updateLists();
+            updateScore();
         }
 
         function speakWord() {
