@@ -212,22 +212,25 @@
                 flex-wrap: wrap;
                 align-items: center;
             }
-            #final-score.active {
-                flex: 2;
-                order: 2;
-            }
-            #final-score.active + #main-container {
+            #main-container.finish-screen {
                 flex-direction: row;
                 align-items: flex-start;
             }
-            #final-score.active + #main-container #scoreboard.active {
+            #main-container.finish-screen #scoreboard.active {
                 display: flex;
                 flex-direction: column;
                 flex: 1;
                 order: 1;
                 max-width: 300px;
             }
-            #final-score.active + #main-container #game {
+            #main-container.finish-screen #final-score.active {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 2;
+                order: 2;
+            }
+            #main-container.finish-screen #game {
                 display: none;
             }
         }
@@ -253,11 +256,16 @@
                 width: 100%;
                 max-width: 150px;
             }
-            #final-score.active + #main-container #scoreboard.active {
+            #main-container.finish-screen #scoreboard.active {
                 display: flex;
                 flex-direction: column;
             }
-            #final-score.active + #main-container #game {
+            #main-container.finish-screen #final-score.active {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            #main-container.finish-screen #game {
                 display: none;
             }
         }
@@ -265,7 +273,7 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.18</p>
+    <p id="version">Version 1.19</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -322,12 +330,12 @@
                 <p id="remaining">Remaining Words: 0</p>
             </div>
         </div>
-    </div>
 
-    <div id="final-score">
-        <h3>Game Over - Final Score</h3>
-        <p id="final-score-display">0 / 0</p>
-        <button onclick="restartGame()">Start Over</button>
+        <div id="final-score">
+            <h3>Game Over - Final Score</h3>
+            <p id="final-score-display">0 / 0</p>
+            <button onclick="restartGame()">Start Over</button>
+        </div>
     </div>
 
     <script>
@@ -432,6 +440,7 @@
             document.getElementById('mode-selection').classList.remove('active');
             document.getElementById('game').classList.add('active');
             document.getElementById('scoreboard').classList.add('active');
+            document.getElementById('main-container').classList.remove('finish-screen');
             startNextWord();
         }
 
@@ -620,12 +629,14 @@
             document.getElementById('game').classList.remove('active');
             document.getElementById('scoreboard').classList.remove('active');
             document.getElementById('final-score').classList.add('active');
-            document.getElementById('scoreboard').classList.add('active'); // Keep scorecard visible
+            document.getElementById('scoreboard').classList.add('active');
+            document.getElementById('main-container').classList.add('finish-screen');
         }
 
         function restartGame() {
             document.getElementById('final-score').classList.remove('active');
             document.getElementById('scoreboard').classList.remove('active');
+            document.getElementById('main-container').classList.remove('finish-screen');
             document.getElementById('controls').classList.add('active');
             document.getElementById('word-input').value = lastUsedWords;
             wordsList = [];
