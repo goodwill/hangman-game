@@ -45,6 +45,14 @@
             resize: none;
             font-size: 1em;
         }
+        #word-list-select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 1em;
+        }
         button {
             padding: 10px 20px;
             margin: 5px;
@@ -147,10 +155,13 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.9</p>
+    <p id="version">Version 1.10</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
+        <select id="word-list-select">
+            <option value="">Select a previous word list</option>
+        </select>
         <br>
         <button onclick="submitWords()">Submit Words</button>
     </div>
@@ -263,6 +274,35 @@
             }
         }
 
+        function loadWordLists() {
+            const wordLists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
+            const select = document.getElementById('word-list-select');
+            select.innerHTML = '<option value="">Select a previous word list</option>';
+            wordLists.forEach((list, index) => {
+                const option = document.createElement('option');
+                option.value = list;
+                option.textContent = list.substring(0, 50) + (list.length > 50 ? '...' : '');
+                select.appendChild(option);
+            });
+            select.onchange = () => {
+                if (select.value) {
+                    document.getElementById('word-input').value = select.value;
+                }
+            };
+        }
+
+        function saveWordList(input) {
+            let wordLists = JSON.parse(localStorage.getItem('hangmanWordLists') || '[]');
+            if (!wordLists.includes(input)) {
+                wordLists.unshift(input);
+                if (wordLists.length > 50) {
+                    wordLists.pop();
+                }
+                localStorage.setItem('hangmanWordLists', JSON.stringify(wordLists));
+            }
+            loadWordLists();
+        }
+
         function submitWords() {
             const input = document.getElementById('word-input').value.trim();
             if (!input) {
@@ -277,6 +317,7 @@
             }
 
             lastUsedWords = input;
+            saveWordList(input);
             remainingWords = [...wordsList];
             totalPoints = wordsList.length;
             score = 0;
@@ -329,6 +370,10 @@
             }
             guessInput.focus();
             updateScore();
+
+            const speech = new SpeechSynthesisUtterance(selectedWord);
+            speech.lang = 'en-US';
+            window.speechSynthesis.speak(speech);
         }
 
         function getMasterMindClue(guess) {
@@ -337,16 +382,14 @@
             const guessed = guess.split('');
             const used = new Set();
 
-            // First pass: Black boxes (correct char, correct position)
             for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
                 if (guessed[i] === target[i]) {
                     clue.push('black');
                     used.add(i);
-                    target[i] = null; // Mark as used
+                    target[i] = null;
                 }
             }
 
-            // Second pass: White boxes (correct char, wrong position)
             for (let i = 0; i < guessed.length; i++) {
                 if (!clue[i] && target.includes(guessed[i])) {
                     const pos = target.indexOf(guessed[i]);
@@ -358,7 +401,6 @@
                 }
             }
 
-            // Fill remaining with empty boxes
             for (let i = clue.length; i < selectedWord.length; i++) {
                 clue[i] = '';
             }
@@ -384,7 +426,7 @@
                     return;
                 }
                 guessedLetters.add(guess);
-                guessAttempts.unshift({ guess, clue: null }); // Latest on top, no clue
+                guessAttempts.unshift({ guess, clue: null });
                 guessInput.value = '';
                 updateGuessList();
 
@@ -424,7 +466,7 @@
                 }
                 guessedLetters.add(guess);
                 const clue = gameMode === 'mastermind' ? getMasterMindClue(guess) : null;
-                guessAttempts.unshift({ guess, clue }); // Latest on top
+                guessAttempts.unshift({ guess, clue });
                 guessInput.value = '';
                 updateGuessList();
 
@@ -516,6 +558,7 @@
             if (e.key === 'Enter') makeGuess();
         });
 
+        loadWordLists();
         drawHangman();
     </script>
 </body>
