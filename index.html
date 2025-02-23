@@ -208,7 +208,7 @@
 </head>
 <body>
     <h1>Hangman Game</h1>
-    <p id="version">Version 1.14</p>
+    <p id="version">Version 1.15</p>
 
     <div id="controls" class="active">
         <textarea id="word-input" placeholder="Enter words separated by commas or spaces"></textarea>
@@ -604,18 +604,40 @@
         function populateVoiceSelect() {
             const voiceSelect = document.getElementById('voice-select');
             voiceSelect.innerHTML = '<option value="">Select a voice</option>';
-            
-            // Filter for high-quality voices (non-remote, premium voices where available)
-            const highQualityVoices = voices.filter(voice => 
-                !voice.name.toLowerCase().includes('remote') && 
-                (voice.name.toLowerCase().includes('premium') || 
-                 !voice.name.toLowerCase().includes('basic'))
+
+            // Preferred voices for British (en-GB) and American (en-US) accents only
+            const preferredVoices = [
+                // British (en-GB)
+                { name: 'Kate', lang: 'en-GB' },
+                { name: 'Serena', lang: 'en-GB' },
+                { name: 'Daniel', lang: 'en-GB' },
+                { name: 'Google UK English Female', lang: 'en-GB' },
+                { name: 'Google UK English Male', lang: 'en-GB' },
+                { name: 'Microsoft Hazel Desktop', lang: 'en-GB' },
+                { name: 'Microsoft George Desktop', lang: 'en-GB' },
+                // American (en-US)
+                { name: 'Samantha', lang: 'en-US' },
+                { name: 'Alex', lang: 'en-US' },
+                { name: 'Google US English', lang: 'en-US' },
+                { name: 'Google US English Male', lang: 'en-US' },
+                { name: 'Microsoft Zira Desktop', lang: 'en-US' },
+                { name: 'Microsoft David Desktop', lang: 'en-US' }
+            ];
+
+            // Filter available voices to match preferred list (en-GB and en-US only)
+            const availableVoices = voices.filter(voice => 
+                preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
             );
 
-            // Fall back to all voices if no high-quality ones are found
-            const displayVoices = highQualityVoices.length > 0 ? highQualityVoices : voices;
+            // Sort voices to maintain the order from preferredVoices
+            availableVoices.sort((a, b) => {
+                const aIndex = preferredVoices.findIndex(p => p.name === a.name && p.lang === a.lang);
+                const bIndex = preferredVoices.findIndex(p => p.name === b.name && p.lang === b.lang);
+                return aIndex - bIndex;
+            });
 
-            displayVoices.forEach(voice => {
+            // Populate dropdown with available en-GB and en-US voices
+            availableVoices.forEach(voice => {
                 const option = document.createElement('option');
                 option.value = voice.name;
                 option.textContent = `${voice.name} (${voice.lang})`;
@@ -623,8 +645,8 @@
             });
 
             // Select first available voice by default
-            if (displayVoices.length > 0) {
-                voiceSelect.value = displayVoices[0].name;
+            if (availableVoices.length > 0) {
+                voiceSelect.value = availableVoices[0].name;
             }
         }
 
