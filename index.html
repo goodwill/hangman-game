@@ -428,26 +428,27 @@
             const getMasterMindClue = (guess) => {
                 const target = selectedWord.split('');
                 const guessed = guess.split('');
-                const clue = new Array(target.length).fill('');
-                const usedPositions = new Set();
-                const checkForCharMatch = [];
+                const clue = []; // Plain array to push clues
+                const usedTargetPositions = new Set(); // Tracks used target positions
+                const checkForCharMatch = []; // Unmatched target characters
 
+                // First loop: Assign black pegs for exact matches
                 for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
                     if (guessed[i] === target[i]) {
-                        clue[i] = 'black';
-                        usedPositions.add(i);
+                        clue.push('black');
+                        usedTargetPositions.add(i);
                     } else {
                         checkForCharMatch.push(target[i]);
                     }
                 }
 
+                // Second loop: Assign white pegs for correct characters in wrong positions
                 for (let i = 0; i < guessed.length; i++) {
-                    if (!usedPositions.has(i)) {
+                    if (!usedTargetPositions.has(i)) { // Skip positions already matched
                         const charIndex = checkForCharMatch.indexOf(guessed[i]);
                         if (charIndex !== -1) {
-                            clue[i] = 'white';
-                            checkForCharMatch.splice(charIndex, 1);
-                            usedPositions.add(i);
+                            clue.push('white');
+                            checkForCharMatch.splice(charIndex, 1); // Remove the matched character
                         }
                     }
                 }
