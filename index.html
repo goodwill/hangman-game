@@ -93,7 +93,7 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.24</p>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.25</p>
                     <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' ? 'md:flex-row md:items-stretch' : gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
@@ -389,27 +389,28 @@
             const getMasterMindClue = (guess) => {
                 const target = selectedWord.split('');
                 const guessed = guess.split('');
-                const clue = new Array(target.length).fill('');
-                const targetUsed = new Array(target.length).fill(false);
-                const guessUsed = new Array(guessed.length).fill(false);
+                const clue = new Array(target.length).fill(''); // Same length as target for display consistency
+                const usedPositions = new Set(); // Tracks used target positions
+                const checkForCharMatch = []; // Unmatched target characters for white pegs
 
+                // First loop: Assign black pegs for exact matches
                 for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
                     if (guessed[i] === target[i]) {
                         clue[i] = 'black';
-                        targetUsed[i] = true;
-                        guessUsed[i] = true;
+                        usedPositions.add(i);
+                    } else {
+                        checkForCharMatch.push(target[i]);
                     }
                 }
 
+                // Second loop: Assign white pegs for correct characters in wrong positions
                 for (let i = 0; i < guessed.length; i++) {
-                    if (!guessUsed[i]) {
-                        for (let j = 0; j < target.length; j++) {
-                            if (!targetUsed[j] && guessed[i] === target[j]) {
-                                clue[i] = 'white';
-                                targetUsed[j] = true;
-                                guessUsed[i] = true;
-                                break;
-                            }
+                    if (!usedPositions.has(i)) { // Skip positions already used for black pegs
+                        const charIndex = checkForCharMatch.indexOf(guessed[i]);
+                        if (charIndex !== -1) {
+                            clue[i] = 'white';
+                            checkForCharMatch.splice(charIndex, 1); // Remove the matched character
+                            usedPositions.add(i); // Mark this guess position as used
                         }
                     }
                 }
