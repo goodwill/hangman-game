@@ -4,13 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hangman Game</title>
-    <!-- Load Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="font-sans text-center m-0 p-[2vh] bg-gradient-to-b from-[#f0f4f8] to-[#d9e2ec] min-h-screen flex flex-col items-center overflow-x-hidden">
     <div id="root"></div>
 
-    <!-- Load React and Babel via CDN -->
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -18,7 +16,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // App Component
         const App = () => {
             const [gameState, setGameState] = useState('controls');
             const [wordsList, setWordsList] = useState([]);
@@ -46,30 +43,18 @@
                             const matchedVoice = availableVoices.find(
                                 v => v.name === savedVoice.name && v.lang === savedVoice.lang
                             );
-                            if (matchedVoice) {
-                                setSelectedVoice(matchedVoice);
-                            } else {
-                                const englishVoice = availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB') || availableVoices[0];
-                                setSelectedVoice(englishVoice);
-                            }
+                            setSelectedVoice(matchedVoice || availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB') || availableVoices[0]);
                         } else {
-                            const englishVoice = availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB') || availableVoices[0];
-                            setSelectedVoice(englishVoice);
+                            setSelectedVoice(availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB') || availableVoices[0]);
                         }
                     }
                 };
-
                 updateVoices();
-                window.speechSynthesis.onvoiceschanged = () => {
-                    updateVoices();
-                    if (window.speechSynthesis.getVoices().length > 0) {
-                        window.speechSynthesis.onvoiceschanged = null;
-                    }
-                };
+                window.speechSynthesis.onvoiceschanged = updateVoices;
             };
 
             const submitWords = (input) => {
-                const words = input.split(/[\s,]+/).filter(word => word.length > 0);
+                const words = input.split('\n').map(word => word.trim()).filter(word => word.length > 0);
                 if (words.length === 0) {
                     alert('Please enter valid words!');
                     return;
@@ -106,8 +91,8 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.27</p>
-                    <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' ? 'md:flex-row md:items-stretch' : gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.28</p>
+                    <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' || gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
                             <ModeSelection
@@ -162,7 +147,6 @@
             );
         };
 
-        // Controls Component
         const Controls = ({ onSubmit, lastUsedWords }) => {
             const [input, setInput] = useState(lastUsedWords);
             const [wordLists, setWordLists] = useState([]);
@@ -200,7 +184,7 @@
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Enter words separated by commas or spaces"
+                        placeholder="Enter words (one per line)"
                         className="w-full h-[15vh] m-[1vh_0] p-[1vh] border border-[#bdc3c7] rounded-md resize-none text-[clamp(0.9rem,2vw,1.2rem)]"
                     />
                     <select
@@ -210,7 +194,7 @@
                         <option value="">Select a previous word list</option>
                         {wordLists.map((list, index) => (
                             <option key={index} value={list}>
-                                {list.substring(0, 50) + (list.length > 50 ? '...' : '')}
+                                {list.split('\n')[0].substring(0, 50) + (list.length > 50 ? '...' : '')}
                             </option>
                         ))}
                     </select>
@@ -224,7 +208,6 @@
             );
         };
 
-        // ModeSelection Component
         const ModeSelection = ({ onStart, voices, selectedVoice, setSelectedVoice }) => {
             const preferredVoices = [
                 { name: 'Kate', lang: 'en-GB' },
@@ -242,7 +225,6 @@
                 { name: 'Microsoft David Desktop', lang: 'en-US' },
             ];
 
-            // Filter voices to only include en-US and en-GB
             const englishVoices = voices.filter(voice => voice.lang === 'en-US' || voice.lang === 'en-GB');
             const preferredAvailable = englishVoices.filter(voice =>
                 preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
@@ -293,15 +275,11 @@
                             className="w-full md:w-auto p-[1vh] border border-[#bdc3c7] rounded-md text-[clamp(0.9rem,2vw,1.2rem)]"
                         >
                             <option value="">Select a voice</option>
-                            {allEnglishVoices.length > 0 ? (
-                                allEnglishVoices.map((voice) => (
-                                    <option key={voice.name} value={voice.name}>
-                                        {`${voice.name} (${voice.lang})`}
-                                    </option>
-                                ))
-                            ) : (
-                                <option value="">No English voices available</option>
-                            )}
+                            {allEnglishVoices.map((voice) => (
+                                <option key={voice.name} value={voice.name}>
+                                    {`${voice.name} (${voice.lang})`}
+                                </option>
+                            ))}
                         </select>
                         <button 
                             onClick={previewVoice} 
@@ -314,7 +292,6 @@
             );
         };
 
-        // Game Component
         const Game = ({
             wordsList,
             setRemainingWords,
@@ -416,7 +393,7 @@
                 const word = wordsList[Math.floor(Math.random() * wordsList.length)].toLowerCase();
                 setSelectedWord(word);
                 setRemainingWords(wordsList.filter(w => w.toLowerCase() !== word));
-                setHiddenWord('-'.repeat(word.length));
+                setHiddenWord(word.split('').map(char => /[a-z-]/.test(char) ? '-' : char).join(''));
                 setGuessesLeft(6);
                 setGuessedLetters(new Set());
                 setGuessAttempts([]);
@@ -428,11 +405,10 @@
             const getMasterMindClue = (guess) => {
                 const target = selectedWord.split('');
                 const guessed = guess.split('');
-                const clue = []; // Plain array to push clues
-                const usedTargetPositions = new Set(); // Tracks used target positions
-                const checkForCharMatch = []; // Unmatched target characters
+                const clue = [];
+                const usedTargetPositions = new Set();
+                const checkForCharMatch = [];
 
-                // First loop: Assign black pegs for exact matches
                 for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
                     if (guessed[i] === target[i]) {
                         clue.push('black');
@@ -442,17 +418,15 @@
                     }
                 }
 
-                // Second loop: Assign white pegs for correct characters in wrong positions
                 for (let i = 0; i < guessed.length; i++) {
-                    if (!usedTargetPositions.has(i)) { // Skip positions already matched
+                    if (!usedTargetPositions.has(i)) {
                         const charIndex = checkForCharMatch.indexOf(guessed[i]);
                         if (charIndex !== -1) {
                             clue.push('white');
-                            checkForCharMatch.splice(charIndex, 1); // Remove the matched character
+                            checkForCharMatch.splice(charIndex, 1);
                         }
                     }
                 }
-
                 return clue;
             };
 
@@ -464,12 +438,12 @@
                 }
 
                 if (gameMode === 'char') {
-                    if (guess.length !== 1 || !/[a-z]/.test(guess)) {
-                        alert('Please enter a single letter!');
+                    if (guess.length !== 1 || !/[a-z-]/.test(guess)) {
+                        alert('Please enter a single letter or hyphen!');
                         return;
                     }
                     if (guessedLetters.has(guess)) {
-                        alert('You already guessed that letter!');
+                        alert('You already guessed that!');
                         return;
                     }
                     const newGuessedLetters = new Set(guessedLetters);
@@ -585,7 +559,7 @@
                             onChange={(e) => setGuessInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && makeGuess()}
                             className={`p-[1vh] border border-[#bdc3c7] rounded-md text-[clamp(0.9rem,2vw,1.2rem)] w-full ${gameMode !== 'char' ? 'md:w-[clamp(15vw,20vw,25vw)]' : 'md:w-[clamp(5vw,10vw,15vw)]'}`}
-                            placeholder={gameMode === 'char' ? 'Guess a letter' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
+                            placeholder={gameMode === 'char' ? 'Guess a letter or -' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
                             maxLength={gameMode === 'char' ? 1 : undefined}
                         />
                         <button onClick={makeGuess} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full md:w-auto text-[clamp(0.9rem,2vw,1.2rem)]">Guess</button>
@@ -596,7 +570,6 @@
             );
         };
 
-        // Scoreboard Component
         const Scoreboard = ({ correctWords, failedWords, score, totalPoints, remainingWords, className }) => {
             return (
                 <div className={`m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col gap-[1vh] ${className}`}>
@@ -621,7 +594,6 @@
             );
         };
 
-        // FinalScore Component
         const FinalScore = ({ score, totalPoints, onRestart, className }) => {
             return (
                 <div className={`m-[2vh_0] w-[90vw] max-w-full p-[2vh] bg-white rounded-lg shadow-lg flex flex-col items-center ${className}`}>
@@ -632,7 +604,6 @@
             );
         };
 
-        // Render the App
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
