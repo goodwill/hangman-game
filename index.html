@@ -91,7 +91,7 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.29</p>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.30</p>
                     <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' || gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
@@ -458,7 +458,7 @@
                         ).join('');
                         setHiddenWord(newHiddenWord);
 
-                        if (!newHiddenWord.includes('-')) {
+                        if (newHiddenWord === selectedWord) {
                             setCorrectWords([...correctWords, selectedWord]);
                             setScore(score + 1);
                             setMessage('You win! Next word...');
@@ -475,7 +475,7 @@
                     }
                 } else {
                     if (guessedLetters.has(guess)) {
-                        alert('You already guessed that word!');
+                        alert('You already guessed that phrase!');
                         return;
                     }
                     const newGuessedLetters = new Set(guessedLetters);
