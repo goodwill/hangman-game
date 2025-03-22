@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="voice.js"></script>
+    <script src="hangmanDrawing.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -30,28 +32,8 @@
             const [selectedVoice, setSelectedVoice] = useState(null);
 
             useEffect(() => {
-                loadVoices();
+                loadVoices(setVoices, setSelectedVoice);
             }, []);
-
-            const loadVoices = () => {
-                const updateVoices = () => {
-                    const availableVoices = window.speechSynthesis.getVoices();
-                    if (availableVoices.length > 0) {
-                        setVoices(availableVoices);
-                        const savedVoice = JSON.parse(localStorage.getItem('selectedVoice'));
-                        if (savedVoice) {
-                            const matchedVoice = availableVoices.find(
-                                v => v.name === savedVoice.name && v.lang === savedVoice.lang
-                            );
-                            setSelectedVoice(matchedVoice || availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB') || availableVoices[0]);
-                        } else {
-                            setSelectedVoice(availableVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB') || availableVoices[0]);
-                        }
-                    }
-                };
-                updateVoices();
-                window.speechSynthesis.onvoiceschanged = updateVoices;
-            };
 
             const submitWords = (input) => {
                 const words = input.split('\n').map(word => word.trimEnd()).filter(word => word.length > 0);
@@ -91,7 +73,7 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.30</p>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.34</p>
                     <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' || gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
@@ -209,34 +191,7 @@
         };
 
         const ModeSelection = ({ onStart, voices, selectedVoice, setSelectedVoice }) => {
-            const preferredVoices = [
-                { name: 'Kate', lang: 'en-GB' },
-                { name: 'Serena', lang: 'en-GB' },
-                { name: 'Daniel', lang: 'en-GB' },
-                { name: 'Google UK English Female', lang: 'en-GB' },
-                { name: 'Google UK English Male', lang: 'en-GB' },
-                { name: 'Microsoft Hazel Desktop', lang: 'en-GB' },
-                { name: 'Microsoft George Desktop', lang: 'en-GB' },
-                { name: 'Samantha', lang: 'en-US' },
-                { name: 'Alex', lang: 'en-US' },
-                { name: 'Google US English', lang: 'en-US' },
-                { name: 'Google US English Male', lang: 'en-US' },
-                { name: 'Microsoft Zira Desktop', lang: 'en-US' },
-                { name: 'Microsoft David Desktop', lang: 'en-US' },
-            ];
-
-            const englishVoices = voices.filter(voice => voice.lang === 'en-US' || voice.lang === 'en-GB');
-            const preferredAvailable = englishVoices.filter(voice =>
-                preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
-            ).sort((a, b) => {
-                const aIndex = preferredVoices.findIndex(p => p.name === a.name && p.lang === a.lang);
-                const bIndex = preferredVoices.findIndex(p => p.name === b.name && p.lang === b.lang);
-                return aIndex - bIndex;
-            });
-            const otherEnglish = englishVoices.filter(voice =>
-                !preferredVoices.some(p => p.name === voice.name && p.lang === voice.lang)
-            ).sort((a, b) => a.name.localeCompare(b.name));
-            const allEnglishVoices = [...preferredAvailable, ...otherEnglish];
+            const { preferredVoices, allEnglishVoices } = getVoiceOptions(voices);
 
             const handleVoiceChange = (e) => {
                 const voice = allEnglishVoices.find(v => v.name === e.target.value);
@@ -244,20 +199,6 @@
                 if (voice) {
                     localStorage.setItem('selectedVoice', JSON.stringify({ name: voice.name, lang: voice.lang }));
                 }
-            };
-
-            const previewVoice = () => {
-                if (!selectedVoice) {
-                    alert('Please select a voice first!');
-                    return;
-                }
-                const speech = new SpeechSynthesisUtterance('Hello my friend!');
-                speech.voice = selectedVoice;
-                speech.lang = selectedVoice.lang;
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                speech.rate = isSafari ? 0.9 : 1.0;
-                speech.pitch = isSafari && selectedVoice.lang === 'en-GB' ? 1.1 : 1.0;
-                window.speechSynthesis.speak(speech);
             };
 
             return (
@@ -282,7 +223,7 @@
                             ))}
                         </select>
                         <button 
-                            onClick={previewVoice} 
+                            onClick={() => previewVoice(selectedVoice)} 
                             className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full md:w-auto text-[clamp(0.9rem,2vw,1.2rem)]"
                         >
                             Hello my friend!
@@ -321,69 +262,8 @@
             }, []);
 
             useEffect(() => {
-                drawHangman();
+                drawHangman(canvasRef, guessesLeft);
             }, [guessesLeft]);
-
-            const drawHangman = () => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                const dpr = window.devicePixelRatio || 1;
-                const size = 300;
-
-                canvas.style.width = `${size}px`;
-                canvas.style.height = `${size}px`;
-                canvas.width = size * dpr;
-                canvas.height = size * dpr;
-                ctx.scale(dpr, dpr);
-
-                ctx.clearRect(0, 0, size, size);
-                ctx.strokeStyle = '#2c3e50';
-                ctx.lineWidth = 2;
-
-                ctx.beginPath();
-                ctx.moveTo(size * 0.2, size * 0.9); ctx.lineTo(size * 0.8, size * 0.9);
-                ctx.moveTo(size * 0.5, size * 0.9); ctx.lineTo(size * 0.5, size * 0.1);
-                ctx.moveTo(size * 0.5, size * 0.1); ctx.lineTo(size * 0.7, size * 0.1);
-                ctx.moveTo(size * 0.7, size * 0.1); ctx.lineTo(size * 0.7, size * 0.2);
-                ctx.stroke();
-
-                if (guessesLeft < 6) { 
-                    ctx.beginPath(); 
-                    ctx.arc(size * 0.7, size * 0.3, size * 0.1, 0, Math.PI * 2); 
-                    ctx.stroke(); 
-                }
-                if (guessesLeft < 5) { 
-                    ctx.beginPath(); 
-                    ctx.moveTo(size * 0.7, size * 0.4); 
-                    ctx.lineTo(size * 0.7, size * 0.6); 
-                    ctx.stroke(); 
-                }
-                if (guessesLeft < 4) { 
-                    ctx.beginPath(); 
-                    ctx.moveTo(size * 0.7, size * 0.45); 
-                    ctx.lineTo(size * 0.6, size * 0.55); 
-                    ctx.stroke(); 
-                }
-                if (guessesLeft < 3) { 
-                    ctx.beginPath(); 
-                    ctx.moveTo(size * 0.7, size * 0.45); 
-                    ctx.lineTo(size * 0.8, size * 0.55); 
-                    ctx.stroke(); 
-                }
-                if (guessesLeft < 2) { 
-                    ctx.beginPath(); 
-                    ctx.moveTo(size * 0.7, size * 0.6); 
-                    ctx.lineTo(size * 0.6, size * 0.75); 
-                    ctx.stroke(); 
-                }
-                if (guessesLeft < 1) { 
-                    ctx.beginPath(); 
-                    ctx.moveTo(size * 0.7, size * 0.6); 
-                    ctx.lineTo(size * 0.8, size * 0.75); 
-                    ctx.stroke(); 
-                }
-            };
 
             const startNextWord = () => {
                 if (wordsList.length === 0) {
@@ -393,13 +273,13 @@
                 const word = wordsList[Math.floor(Math.random() * wordsList.length)].toLowerCase();
                 setSelectedWord(word);
                 setRemainingWords(wordsList.filter(w => w.toLowerCase() !== word));
-                setHiddenWord(word.replace(/[a-z- ]/g, '-'));
+                setHiddenWord('_'.repeat(word.length));
                 setGuessesLeft(6);
                 setGuessedLetters(new Set());
                 setGuessAttempts([]);
                 setMessage(`Guesses left: 6`);
                 setGuessInput('');
-                speakWordWithVoice(word);
+                speakWordWithVoice(word, selectedVoice);
             };
 
             const getMasterMindClue = (guess) => {
@@ -454,7 +334,7 @@
 
                     if (selectedWord.includes(guess)) {
                         const newHiddenWord = selectedWord.split('').map((char, i) =>
-                            char === guess ? guess : hiddenWord[i]
+                            char === guess ? char : hiddenWord[i]
                         ).join('');
                         setHiddenWord(newHiddenWord);
 
@@ -508,19 +388,7 @@
                     alert('Start a game first!');
                     return;
                 }
-                speakWordWithVoice(selectedWord);
-            };
-
-            const speakWordWithVoice = (word) => {
-                const speech = new SpeechSynthesisUtterance(word);
-                if (selectedVoice) {
-                    speech.voice = selectedVoice;
-                    speech.lang = selectedVoice.lang;
-                }
-                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-                speech.rate = isSafari ? 0.9 : 1.0;
-                speech.pitch = isSafari && selectedVoice?.lang === 'en-GB' ? 1.1 : 1.0;
-                window.speechSynthesis.speak(speech);
+                speakWordWithVoice(selectedWord, selectedVoice);
             };
 
             return (
