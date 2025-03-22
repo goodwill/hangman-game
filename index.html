@@ -54,7 +54,7 @@
             };
 
             const submitWords = (input) => {
-                const words = input.split('\n').map(word => word.trim()).filter(word => word.length > 0);
+                const words = input.split('\n').map(word => word.trimEnd()).filter(word => word.length > 0);
                 if (words.length === 0) {
                     alert('Please enter valid words!');
                     return;
@@ -91,7 +91,7 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.28</p>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.29</p>
                     <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' || gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
@@ -184,7 +184,7 @@
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        placeholder="Enter words (one per line)"
+                        placeholder="Enter words/phrases (one per line)"
                         className="w-full h-[15vh] m-[1vh_0] p-[1vh] border border-[#bdc3c7] rounded-md resize-none text-[clamp(0.9rem,2vw,1.2rem)]"
                     />
                     <select
@@ -393,7 +393,7 @@
                 const word = wordsList[Math.floor(Math.random() * wordsList.length)].toLowerCase();
                 setSelectedWord(word);
                 setRemainingWords(wordsList.filter(w => w.toLowerCase() !== word));
-                setHiddenWord(word.split('').map(char => /[a-z-]/.test(char) ? '-' : char).join(''));
+                setHiddenWord(word.replace(/[a-z- ]/g, '-'));
                 setGuessesLeft(6);
                 setGuessedLetters(new Set());
                 setGuessAttempts([]);
@@ -438,8 +438,8 @@
                 }
 
                 if (gameMode === 'char') {
-                    if (guess.length !== 1 || !/[a-z-]/.test(guess)) {
-                        alert('Please enter a single letter or hyphen!');
+                    if (guess.length !== 1 || !/[a-z- ]/.test(guess)) {
+                        alert('Please enter a single letter, hyphen, or space!');
                         return;
                     }
                     if (guessedLetters.has(guess)) {
@@ -449,7 +449,7 @@
                     const newGuessedLetters = new Set(guessedLetters);
                     newGuessedLetters.add(guess);
                     setGuessedLetters(newGuessedLetters);
-                    setGuessAttempts([{ guess, clue: null }, ...guessAttempts]);
+                    setGuessAttempts([{ guess: guess === ' ' ? '[space]' : guess, clue: null }, ...guessAttempts]);
                     setGuessInput('');
 
                     if (selectedWord.includes(guess)) {
@@ -559,7 +559,7 @@
                             onChange={(e) => setGuessInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && makeGuess()}
                             className={`p-[1vh] border border-[#bdc3c7] rounded-md text-[clamp(0.9rem,2vw,1.2rem)] w-full ${gameMode !== 'char' ? 'md:w-[clamp(15vw,20vw,25vw)]' : 'md:w-[clamp(5vw,10vw,15vw)]'}`}
-                            placeholder={gameMode === 'char' ? 'Guess a letter or -' : gameMode === 'mastermind' ? 'Guess the word' : 'Guess whole word'}
+                            placeholder={gameMode === 'char' ? 'Guess a letter, - or space' : gameMode === 'mastermind' ? 'Guess the phrase' : 'Guess whole phrase'}
                             maxLength={gameMode === 'char' ? 1 : undefined}
                         />
                         <button onClick={makeGuess} className="p-[1vh_2vw] bg-[#3498db] text-white rounded-md hover:bg-[#2980b9] w-full md:w-auto text-[clamp(0.9rem,2vw,1.2rem)]">Guess</button>
