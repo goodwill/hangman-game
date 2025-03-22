@@ -14,6 +14,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="voice.js"></script>
     <script src="hangmanDrawing.js"></script>
+    <script src="guessLogic.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -73,7 +74,7 @@
             return (
                 <div>
                     <h1 className="text-[#2c3e50] text-[clamp(1.8rem,5vw,3rem)] mb-[0.5vh]">Hangman Game</h1>
-                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.35</p>
+                    <p id="version" className="text-[#7f8c8d] text-[clamp(0.8rem,3vw,1.2rem)] mb-[2vh]">Version 1.37</p>
                     <div id="main-container" className={`w-[95vw] max-w-full flex flex-col gap-[2vh] flex-grow ${gameState === 'playing' || gameState === 'finished' ? 'md:flex-row md:items-stretch' : ''}`}>
                         {gameState === 'controls' && <Controls onSubmit={submitWords} lastUsedWords={lastUsedWords} />}
                         {gameState === 'mode' && (
@@ -270,9 +271,10 @@
                     onEnd();
                     return;
                 }
-                const word = wordsList[Math.floor(Math.random() * wordsList.length)].toLowerCase();
+                const word = wordsList[Math.floor(Math.random() * wordsList.length)];
+                console.log('Selected word:', word);
                 setSelectedWord(word);
-                setRemainingWords(wordsList.filter(w => w.toLowerCase() !== word));
+                setRemainingWords(wordsList.filter(w => w !== word));
                 setHiddenWord('_'.repeat(word.length));
                 setGuessesLeft(6);
                 setGuessedLetters(new Set());
@@ -282,108 +284,30 @@
                 speakWordWithVoice(word, selectedVoice);
             };
 
-            const getMasterMindClue = (guess) => {
-                const target = selectedWord.split('');
-                const guessed = guess.split('');
-                const clue = [];
-                const usedTargetPositions = new Set();
-                const checkForCharMatch = [];
-
-                for (let i = 0; i < Math.min(target.length, guessed.length); i++) {
-                    if (guessed[i] === target[i]) {
-                        clue.push('black');
-                        usedTargetPositions.add(i);
-                    } else {
-                        checkForCharMatch.push(target[i]);
-                    }
-                }
-
-                for (let i = 0; i < guessed.length; i++) {
-                    if (!usedTargetPositions.has(i)) {
-                        const charIndex = checkForCharMatch.indexOf(guessed[i]);
-                        if (charIndex !== -1) {
-                            clue.push('white');
-                            checkForCharMatch.splice(charIndex, 1);
-                        }
-                    }
-                }
-                return clue;
-            };
-
             const makeGuess = () => {
-                let guess = guessInput;
-                if (gameMode === 'char') {
-                    // For single character mode, don't trim spaces
-                    guess = guessInput.length === 1 && guessInput === ' ' ? ' ' : guessInput.toLowerCase().trim();
-                    if (guess.length !== 1 || !/[a-z- ]/.test(guess)) {
-                        alert('Please enter a single letter, hyphen, or space!');
-                        return;
-                    }
-                    if (guessedLetters.has(guess)) {
-                        alert('You already guessed that!');
-                        return;
-                    }
-                    const newGuessedLetters = new Set(guessedLetters);
-                    newGuessedLetters.add(guess);
-                    setGuessedLetters(newGuessedLetters);
-                    setGuessAttempts([{ guess: guess === ' ' ? '[space]' : guess, clue: null }, ...guessAttempts]);
-                    setGuessInput('');
-
-                    if (selectedWord.includes(guess)) {
-                        const newHiddenWord = selectedWord.split('').map((char, i) =>
-                            char === guess ? char : hiddenWord[i]
-                        ).join('');
-                        setHiddenWord(newHiddenWord);
-
-                        if (newHiddenWord === selectedWord) {
-                            setCorrectWords([...correctWords, selectedWord]);
-                            setScore(score + 1);
-                            setMessage('You win! Next word...');
-                            setTimeout(startNextWord, 1000);
-                        }
-                    } else {
-                        setGuessesLeft(guessesLeft - 1);
-                        setMessage(`Guesses left: ${guessesLeft - 1}`);
-                        if (guessesLeft - 1 === 0) {
-                            setFailedWords([...failedWords, selectedWord]);
-                            setMessage(`Game Over! The word was: ${selectedWord}. Next word...`);
-                            setTimeout(startNextWord, 1000);
-                        }
-                    }
-                } else {
-                    // For other modes, trim as usual
-                    guess = guessInput.toLowerCase().trim();
-                    if (!guess) {
-                        speakWord();
-                        return;
-                    }
-                    if (guessedLetters.has(guess)) {
-                        alert('You already guessed that phrase!');
-                        return;
-                    }
-                    const newGuessedLetters = new Set(guessedLetters);
-                    newGuessedLetters.add(guess);
-                    setGuessedLetters(newGuessedLetters);
-                    const clue = gameMode === 'mastermind' ? getMasterMindClue(guess) : null;
-                    setGuessAttempts([{ guess, clue }, ...guessAttempts]);
-                    setGuessInput('');
-
-                    if (guess === selectedWord) {
-                        setHiddenWord(selectedWord);
-                        setCorrectWords([...correctWords, selectedWord]);
-                        setScore(score + 1);
-                        setMessage('You win! Next word...');
-                        setTimeout(startNextWord, 1000);
-                    } else {
-                        setGuessesLeft(guessesLeft - 1);
-                        setMessage(`Guesses left: ${guessesLeft - 1}`);
-                        if (guessesLeft - 1 === 0) {
-                            setFailedWords([...failedWords, selectedWord]);
-                            setMessage(`Game Over! The word was: ${selectedWord}. Next word...`);
-                            setTimeout(startNextWord, 1000);
-                        }
-                    }
-                }
+                handleGuess({
+                    guessInput,
+                    gameMode,
+                    selectedWord,
+                    hiddenWord,
+                    guessesLeft,
+                    guessedLetters,
+                    guessAttempts,
+                    correctWords,
+                    failedWords,
+                    score,
+                    setGuessInput,
+                    setGuessedLetters,
+                    setGuessAttempts,
+                    setHiddenWord,
+                    setGuessesLeft,
+                    setMessage,
+                    setCorrectWords,
+                    setFailedWords,
+                    setScore,
+                    startNextWord,
+                    speakWord
+                });
             };
 
             const speakWord = () => {
@@ -459,7 +383,7 @@
                     <div className="flex-1 min-w-[25vw] m-[0.5vh]">
                         <h3 className="text-[#2c3e50] text-[clamp(1rem,2.5vw,1.4rem)] mb-[1vh]">Score</h3>
                         <p className="text-[clamp(0.8rem,2vw,1.1rem)]">{`${score} / ${totalPoints}`}</p>
-                        <p className="text-[clamp(0.8rem,2vw,1.1rem)]">Remaining Words: {remainingWords.length}</p>
+                        <p className="text-[clamp(0.8rem,2vw,1.1rem)]">Remaining Words: ${remainingWords.length}</p>
                     </div>
                 </div>
             );
